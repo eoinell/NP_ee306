@@ -608,7 +608,11 @@ if __name__ == '__main__':
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
     spec, shifts = truncate(spec, shifts, 220, np.inf)
     ff = fullfit(spec, shifts, order = 7)
+<<<<<<< Updated upstream
     ff.Run(verbose = True, lineshape = 'G')
+=======
+    ff.Run(verbose = True, lineshape = 'L')
+>>>>>>> Stashed changes
     ff.plot_result()
     ff.plot_asymm_result()
         

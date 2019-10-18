@@ -135,7 +135,7 @@ def fit(particle, input_shifts, analysis_range, T_misc = None, T_misc_shifts = N
         S_bg_p = Sfit.bg_p.tolist()
         S_bg_ps[index] = S_bg_p
         Speaks[index] = S_peaks
-        asymmSpeaks[index] = Sfit.asymmpeaks_stack
+        asymmSpeaks[index] = Sfit.asymm_peaks_stack
         
         use_exponential = False
         ASfit = fullfit(AS_portion, AS_shifts,  order = 11, use_exponential = use_exponential, transmission = AS_normfac)
@@ -143,7 +143,7 @@ def fit(particle, input_shifts, analysis_range, T_misc = None, T_misc_shifts = N
         AS_bg = ASfit.bg
         AS_signal = ASfit.signal
         AS_peaks = ASfit.peaks_stack
-        asymmASpeaks[index] = ASfit.asymmpeaks_stack
+        asymmASpeaks[index] = ASfit.asymm_peaks_stack
         ASpeaks[index] = AS_peaks
         AS_bg_p = ASfit.bg_p.tolist()
         AS_bg_ps[index] = AS_bg_p
@@ -166,8 +166,8 @@ def fit(particle, input_shifts, analysis_range, T_misc = None, T_misc_shifts = N
             plt.plot(shifts, raw_counts, color = plt.cm.plasma_r(power*color_fac), zorder = 1)
             plt.fill_between(S_shifts, S_bg, 0,color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
             plt.fill_between(AS_shifts, AS_bg, 0,color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
-            allpeaks = np.append(Sfit.peaks, ASfit.peaks)
-            plt.plot(shifts, full_bg+ Sfit.multi_L(shifts, *allpeaks)*normfac, '--', color = 'k', alpha = 0.5, zorder = 1)
+            allpeaks = np.append(Sfit.asymm_peaks_stack, ASfit.asymm_peaks_stack, axis = 0)
+            plt.plot(shifts, full_bg+ Sfit.asymm_multi_L(shifts, *allpeaks)*normfac, '--', color = 'k', alpha = 0.5, zorder = 1)
             maxes.append(max(raw_counts))
             if counter == len(powers)-1: 
                 plt.fill_between([-notch, notch], 0, 1000000, color = 'w', alpha = 1, zorder = 2, linestyle = 'None')
@@ -181,7 +181,7 @@ def fit(particle, input_shifts, analysis_range, T_misc = None, T_misc_shifts = N
             plt.fill_between(S_shifts, fancy_log(S_bg - AS_bg_p[-1]), 0, color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
             plt.fill_between(AS_shifts, fancy_log((AS_bg - AS_bg_p[-1])/AS_normfac), 0, color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
             allpeaks = np.append(Sfit.peaks, ASfit.peaks)
-            plt.plot(shifts, fancy_log(full_bg - AS_bg_p[-1] + Sfit.multi_L(shifts, *allpeaks)), '--', color = 'k', alpha = 0.5, zorder = 1)
+            plt.plot(shifts, fancy_log(full_bg - AS_bg_p[-1] + Sfit.asymm_multi_L(shifts, *allpeaks)), '--', color = 'k', alpha = 0.5, zorder = 1)
             logmaxes.append(max(fullcounts))
             if counter == len(powers)-1: 
                 plt.fill_between([-notch, notch], -100, 100, color = 'w', alpha = 1, zorder = 2, linestyle = 'None')
