@@ -66,7 +66,8 @@ import scipy.ndimage.filters as ndimf
 from scipy import constants as constants
 from scipy.interpolate import interp1d as interp
 import pywt
-
+from nplab.analysis import Auto_Gaussian_Smooth as sm
+from scipy.signal import argrelextrema
 
 def truncate(counts, wavelengths, lower_cutoff, upper_cutoff, return_indices_only = False):
     '''
@@ -248,24 +249,24 @@ class fullfit:
             self.bg_vals = []
             self.bg_indices = []
             
-            for section in range(self.order+9):
-                seg_indices = np.array([section,section+1])*len(self.spec)/(self.order+10)
-                seg = self.spec[seg_indices[0]:seg_indices[1]]
-                bg_index = np.argmin(seg)+section*len(self.spec)/(self.order+10)
-                self.bg_indices.append(bg_index)
-                for extra in np.arange(2)+1:
-                    try:
-                        self.bg_indices.append(bg_index+extra)
-                    except:
-                        dump = 1
-                    try:
-                        self.bg_indices.append(bg_index-extra)
-                    except:
-                        dump = 1
+            smoothed = sm.Run(self.spec)
             
-            self.bg_indices.extend(range(5))
-            self.bg_indices.extend( -np.arange(5)-1)
-            self.bg_vals = self.spec[self.bg_indices]
+            self.bg_indices = argrelextrema(smoothed, np.less)[0].tolist()
+            plt.figure()
+            plt.plot(smoothed)
+            plt.plot(self.bg_indices,smoothed[self.bg_indices], 'o')
+#            for bg_index in self.bg_indices:
+#                for extra in np.arange(2)+1:
+#                    try:
+#                        self.bg_indices.append(bg_index+extra)
+#                    except:
+#                        dump = 1
+#                    try:
+#                        self.bg_indices.append(bg_index-extra)
+#                    except:
+#                        dump = 1
+#                
+            self.bg_vals = smoothed[self.bg_indices]
             self.bg_bound = (min(self.spec), max(self.spec))
             self.bg_bounds = []
             while len(self.bg_bounds)<len(self.bg_vals):
@@ -549,6 +550,8 @@ class fullfit:
         
         self.optimize_peaks()
         self.optimize_asymm()
+        self.optimize_bg()
+        self.optimize_asymm()
 if __name__ == '__main__':
     import conversions as cnv
     import ipdb
@@ -561,7 +564,7 @@ if __name__ == '__main__':
     spec = scan['Particle_6']['power_series_4'][0]
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
     spec, shifts = truncate(spec, shifts, -np.inf, -220)
-    ff = fullfit(spec, shifts, order = 5)
+    ff = fullfit(spec, shifts, order = 12)
     ff.Run(verbose = True)
     ff.plot_result()
         
