@@ -564,6 +564,7 @@ class fullfit:
         self.optimize_asymm()
         self.optimize_bg()
         self.optimize_asymm()
+        
 if __name__ == '__main__':
     import conversions as cnv
     import ipdb
