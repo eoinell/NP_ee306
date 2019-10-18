@@ -66,6 +66,7 @@ import scipy.ndimage.filters as ndimf
 from scipy import constants as constants
 from scipy.interpolate import interp1d as interp
 import pywt
+from nplab.analysis import Auto_Gaussian_Smooth as sm
 
 
 def truncate(counts, wavelengths, lower_cutoff, upper_cutoff, return_indices_only = False):
@@ -161,10 +162,20 @@ class fullfit:
         plt.figure()
         plt.plot(self.shifts, self.spec)
         plt.plot(self.shifts,self.bg)
+        for peak in self.peaks_stack:
+            
+            plt.plot(self.shifts,self.bg+self.L(self.shifts,*peak)*self.transmission)
+    def plot_asymm_result(self):
+        '''
+        plots the spectrum and the individual peaks
+        note that areas where the peaks overlap aren't added together, so fits may appear off.
+        '''
+        plt.figure()
+        plt.plot(self.shifts, self.spec)
+        plt.plot(self.shifts,self.bg)
         for asymmpeak in self.asymmpeaks_stack:
             
-            plt.plot(self.shifts,self.bg+self.asymm_L(self.shifts,asymmpeak)*self.transmission)
-                
+            plt.plot(self.shifts,self.bg+self.asymm_L(self.shifts,asymmpeak)*self.transmission)            
                 
     def Add_New_Peak(self):
         '''
@@ -248,10 +259,11 @@ class fullfit:
             self.bg_vals = []
             self.bg_indices = []
             
-            for section in range(self.order+9):
-                seg_indices = np.array([section,section+1])*len(self.spec)/(self.order+10)
+            smoothed = sm.Run(self.spec)
+            for section in range(self.order*5 - 1):
+                seg_indices = np.array([section,section+1])*len(self.spec)/(self.order*5)
                 seg = self.spec[seg_indices[0]:seg_indices[1]]
-                bg_index = np.argmin(seg)+section*len(self.spec)/(self.order+10)
+                bg_index = np.argmin(seg)+section*len(self.spec)/(self.order*5)
                 self.bg_indices.append(bg_index)
                 for extra in np.arange(2)+1:
                     try:
@@ -426,12 +438,12 @@ class fullfit:
             betapeak = truncate(symmpeak, self.shifts, peak[1], np.inf)[0]
             
             def asymmloss(alpha_beta):
-               fit = np.append(peak[0]*(alphapeak/peak[0])**alpha_beta[0], peak[0]*(betapeak/peak[0])**alpha_beta[1])
-               obj = np.sum((self.signal - fit)**2)
+               fit = np.append(peak[0]*((alphapeak/peak[0])**alpha_beta[0]), peak[0]*((betapeak/peak[0])**alpha_beta[1]))
+               obj = np.sum(np.square(self.signal - fit))
                return obj
             
             alpha_beta = np.array([1,1])
-            asymmbounds = np.array([(0,2), (0,2)])
+            asymmbounds = np.array([(0,1.0001), (0,1.0001)])
             alpha_beta = minimize(asymmloss, alpha_beta, bounds = asymmbounds).x    
             asymmpeak = np.append(peak, alpha_beta).tolist()
             self.asymmpeaks_stack.append(asymmpeak)
@@ -439,7 +451,7 @@ class fullfit:
         symmpeak = self.L(shifts, *asymmpeak[:3])
         alpha_peak = truncate(symmpeak, shifts, -np.inf, asymmpeak[1])[0]
         beta_peak = truncate(symmpeak, shifts, asymmpeak[1], np.inf)[0]
-        return np.append(asymmpeak[0]*(alpha_peak/asymmpeak[0])**asymmpeak[3], asymmpeak[0]*(beta_peak/asymmpeak[0])**asymmpeak[4])
+        return np.append(asymmpeak[0]*((alpha_peak/asymmpeak[0])**asymmpeak[3]), asymmpeak[0]*((beta_peak/asymmpeak[0])**asymmpeak[4]))
     
     def asymm_multi_L(self):
         fit = np.zeroes(len(self.signal))
@@ -557,6 +569,7 @@ if __name__ == '__main__':
     ff = fullfit(spec, shifts, order = 5)
     ff.Run(verbose = True)
     ff.plot_result()
+    ff.plot_asymm_result()
         
             	
 
