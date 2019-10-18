@@ -420,14 +420,21 @@ class fullfit:
         allows the peaks to become asymmetric by raising the peaks to powers alpha and beta on either side of the centre
         '''
         self.asymmpeaks_stack = []
-        for peak in self.peaks_stack:
+        for index, peak in enumerate(self.peaks_stack):
+            other_peak_indices = range(len(self.peaks_stack))
+            other_peak_indices.remove(index)
+            other_peaks = []
+            for i in other_peak_indices:
+               other_peaks.extend(self.peaks_stack[i]) 
+            rest_signal = self.multi_L(self.shifts, *other_peaks)
+            to_fit = (np.array(self.signal) - np.array(rest_signal)).tolist()
             symmpeak = self.L(self.shifts, *peak)
             alphapeak = truncate(symmpeak, self.shifts, -np.inf, peak[1])[0]
             betapeak = truncate(symmpeak, self.shifts, peak[1], np.inf)[0]
             
             def asymmloss(alpha_beta):
                fit = np.append(peak[0]*(alphapeak/peak[0])**alpha_beta[0], peak[0]*(betapeak/peak[0])**alpha_beta[1])
-               obj = np.sum((self.signal - fit)**2)
+               obj = np.sum((to_fit - fit)**2)
                return obj
             
             alpha_beta = np.array([1,1])
@@ -449,7 +456,7 @@ class fullfit:
         
         
     
-    def Run(self,initial_fit=None, add_peaks = True, minwidth = 4, maxwidth = 20, regions = 20, noise_factor = 0.6, min_peak_spacing = 10, comparison_thresh = 0.1, verbose = False):    
+    def Run(self,initial_fit=None, add_peaks = True, minwidth = 4, maxwidth = 20, regions = 20, noise_factor = 0.1, min_peak_spacing = 5, comparison_thresh = 0.01, verbose = False):    
     	'''
         described at the top
         '''
