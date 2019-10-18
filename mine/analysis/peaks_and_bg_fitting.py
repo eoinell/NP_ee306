@@ -262,9 +262,7 @@ class fullfit:
             smoothed = sm.Run(self.spec)
             
             self.bg_indices = argrelextrema(smoothed, np.less)[0].tolist()
-            plt.figure()
-            plt.plot(smoothed)
-            plt.plot(self.bg_indices,smoothed[self.bg_indices], 'o')
+            
 #            for bg_index in self.bg_indices:
 #                for extra in np.arange(2)+1:
 #                    try:
