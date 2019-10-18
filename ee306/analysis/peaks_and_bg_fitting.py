@@ -162,10 +162,20 @@ class fullfit:
         plt.figure()
         plt.plot(self.shifts, self.spec)
         plt.plot(self.shifts,self.bg)
+        for peak in self.peaks_stack:
+            
+            plt.plot(self.shifts,self.bg+self.L(self.shifts,*peak)*self.transmission)
+    def plot_asymm_result(self):
+        '''
+        plots the spectrum and the individual peaks
+        note that areas where the peaks overlap aren't added together, so fits may appear off.
+        '''
+        plt.figure()
+        plt.plot(self.shifts, self.spec)
+        plt.plot(self.shifts,self.bg)
         for asymmpeak in self.asymmpeaks_stack:
             
-            plt.plot(self.shifts,self.bg+self.asymm_L(self.shifts,asymmpeak)*self.transmission)
-                
+            plt.plot(self.shifts,self.bg+self.asymm_L(self.shifts,asymmpeak)*self.transmission)            
                 
     def Add_New_Peak(self):
         '''
@@ -418,7 +428,7 @@ class fullfit:
     
     def optimize_asymm(self):
         '''
-        allows the peaks to become asymmetric by raising the peaks to powers alpha and beta on either side of the centre
+        allows the peaks to become asymmetric by optimizing the width on either side (alpha and beta) seperately
         '''
         self.asymmpeaks_stack = []
         for index, peak in enumerate(self.peaks_stack):
@@ -438,16 +448,18 @@ class fullfit:
                obj = np.sum((to_fit - fit)**2)
                return obj
             
-            alpha_beta = np.array([1,1])
-            asymmbounds = np.array([(0,2), (0,2)])
-            alpha_beta = minimize(asymmloss, alpha_beta, bounds = asymmbounds).x    
-            asymmpeak = np.append(peak, alpha_beta).tolist()
+            widths = np.array([peak[2],peak[2]])
+            asymmbounds = np.array([(0.3*peak[2],3*peak[2]), (0.3*peak[2],3*peak[2])])
+            alpha_beta = minimize(asymmloss, widths, bounds = asymmbounds).x    
+            asymmpeak = np.append(peak[0:2], alpha_beta).tolist()
             self.asymmpeaks_stack.append(asymmpeak)
     def asymm_L(self, shifts, asymmpeak):
-        symmpeak = self.L(shifts, *asymmpeak[:3])
-        alpha_peak = truncate(symmpeak, shifts, -np.inf, asymmpeak[1])[0]
-        beta_peak = truncate(symmpeak, shifts, asymmpeak[1], np.inf)[0]
-        return np.append(asymmpeak[0]*(alpha_peak/asymmpeak[0])**asymmpeak[3], asymmpeak[0]*(beta_peak/asymmpeak[0])**asymmpeak[4])
+        
+        alphashifts = truncate(shifts, shifts, -np.inf, asymmpeak[1])[0]
+        betashifts = truncate(shifts, shifts, asymmpeak[1], np.inf)[0]
+        to_return = np.append(self.L(alphashifts,asymmpeak[0], asymmpeak[1], asymmpeak[3]),
+                               self.L(betashifts, asymmpeak[0], asymmpeak[1], asymmpeak[3]))
+        return to_return
     
     def asymm_multi_L(self):
         fit = np.zeroes(len(self.signal))
@@ -567,6 +579,7 @@ if __name__ == '__main__':
     ff = fullfit(spec, shifts, order = 12)
     ff.Run(verbose = True)
     ff.plot_result()
+    ff.plot_asymm_result()
         
             	
 
