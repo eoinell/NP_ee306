@@ -67,7 +67,7 @@ from scipy import constants as constants
 from scipy.interpolate import interp1d as interp
 import pywt
 from nplab.analysis import Auto_Gaussian_Smooth as sm
-
+from scipy.signal import argrelextrema
 
 def truncate(counts, wavelengths, lower_cutoff, upper_cutoff, return_indices_only = False):
     '''
@@ -260,24 +260,23 @@ class fullfit:
             self.bg_indices = []
             
             smoothed = sm.Run(self.spec)
-            for section in range(self.order*5 - 1):
-                seg_indices = np.array([section,section+1])*len(self.spec)/(self.order*5)
-                seg = self.spec[seg_indices[0]:seg_indices[1]]
-                bg_index = np.argmin(seg)+section*len(self.spec)/(self.order*5)
-                self.bg_indices.append(bg_index)
-                for extra in np.arange(2)+1:
-                    try:
-                        self.bg_indices.append(bg_index+extra)
-                    except:
-                        dump = 1
-                    try:
-                        self.bg_indices.append(bg_index-extra)
-                    except:
-                        dump = 1
             
-            self.bg_indices.extend(range(5))
-            self.bg_indices.extend( -np.arange(5)-1)
-            self.bg_vals = self.spec[self.bg_indices]
+            self.bg_indices = argrelextrema(smoothed, np.less)[0].tolist()
+            plt.figure()
+            plt.plot(smoothed)
+            plt.plot(self.bg_indices,smoothed[self.bg_indices], 'o')
+#            for bg_index in self.bg_indices:
+#                for extra in np.arange(2)+1:
+#                    try:
+#                        self.bg_indices.append(bg_index+extra)
+#                    except:
+#                        dump = 1
+#                    try:
+#                        self.bg_indices.append(bg_index-extra)
+#                    except:
+#                        dump = 1
+#                
+            self.bg_vals = smoothed[self.bg_indices]
             self.bg_bound = (min(self.spec), max(self.spec))
             self.bg_bounds = []
             while len(self.bg_bounds)<len(self.bg_vals):
@@ -429,29 +428,38 @@ class fullfit:
     
     def optimize_asymm(self):
         '''
-        allows the peaks to become asymmetric by raising the peaks to powers alpha and beta on either side of the centre
+        allows the peaks to become asymmetric by optimizing the width on either side (alpha and beta) seperately
         '''
         self.asymmpeaks_stack = []
-        for peak in self.peaks_stack:
-            symmpeak = self.L(self.shifts, *peak)
-            alphapeak = truncate(symmpeak, self.shifts, -np.inf, peak[1])[0]
-            betapeak = truncate(symmpeak, self.shifts, peak[1], np.inf)[0]
+        for index, peak in enumerate(self.peaks_stack):
+            other_peak_indices = range(len(self.peaks_stack))
+            other_peak_indices.remove(index)
+            other_peaks = []
+            for i in other_peak_indices:
+               other_peaks.extend(self.peaks_stack[i]) 
+            rest_signal = self.multi_L(self.shifts, *other_peaks)
+            to_fit = (np.array(self.signal) - np.array(rest_signal)).tolist()
+            alphaspec, alphashifts = truncate(to_fit, self.shifts, -np.inf, peak[1])
+            betaspec, betashifts = truncate(to_fit, self.shifts, peak[1], np.inf)
             
-            def asymmloss(alpha_beta):
-               fit = np.append(peak[0]*((alphapeak/peak[0])**alpha_beta[0]), peak[0]*((betapeak/peak[0])**alpha_beta[1]))
-               obj = np.sum(np.square(self.signal - fit))
+            def asymmloss(widths):
+               fit = np.append(self.L(alphashifts,peak[0], peak[1], widths[0]),
+                               self.L(betashifts, peak[0], peak[1], widths[1]))
+               obj = np.sum(np.square(to_fit - fit))
                return obj
             
-            alpha_beta = np.array([1,1])
-            asymmbounds = np.array([(0,1.0001), (0,1.0001)])
-            alpha_beta = minimize(asymmloss, alpha_beta, bounds = asymmbounds).x    
-            asymmpeak = np.append(peak, alpha_beta).tolist()
+            widths = np.array([peak[2],peak[2]])
+            asymmbounds = np.array([(0.3*peak[2],3*peak[2]), (0.3*peak[2],3*peak[2])])
+            alpha_beta = minimize(asymmloss, widths, bounds = asymmbounds).x    
+            asymmpeak = np.append(peak[0:2], alpha_beta).tolist()
             self.asymmpeaks_stack.append(asymmpeak)
     def asymm_L(self, shifts, asymmpeak):
-        symmpeak = self.L(shifts, *asymmpeak[:3])
-        alpha_peak = truncate(symmpeak, shifts, -np.inf, asymmpeak[1])[0]
-        beta_peak = truncate(symmpeak, shifts, asymmpeak[1], np.inf)[0]
-        return np.append(asymmpeak[0]*((alpha_peak/asymmpeak[0])**asymmpeak[3]), asymmpeak[0]*((beta_peak/asymmpeak[0])**asymmpeak[4]))
+        
+        alphashifts = truncate(shifts, shifts, -np.inf, asymmpeak[1])[0]
+        betashifts = truncate(shifts, shifts, asymmpeak[1], np.inf)[0]
+        to_return = np.append(self.L(alphashifts,asymmpeak[0], asymmpeak[1], asymmpeak[3]),
+                               self.L(betashifts, asymmpeak[0], asymmpeak[1], asymmpeak[3]))
+        return to_return
     
     def asymm_multi_L(self):
         fit = np.zeroes(len(self.signal))
@@ -461,7 +469,7 @@ class fullfit:
         
         
     
-    def Run(self,initial_fit=None, add_peaks = True, minwidth = 4, maxwidth = 20, regions = 20, noise_factor = 0.6, min_peak_spacing = 10, comparison_thresh = 0.1, verbose = False):    
+    def Run(self,initial_fit=None, add_peaks = True, minwidth = 4, maxwidth = 20, regions = 20, noise_factor = 0.1, min_peak_spacing = 4, comparison_thresh = 0.01, verbose = False):    
     	'''
         described at the top
         '''
@@ -566,7 +574,7 @@ if __name__ == '__main__':
     spec = scan['Particle_6']['power_series_4'][0]
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
     spec, shifts = truncate(spec, shifts, -np.inf, -220)
-    ff = fullfit(spec, shifts, order = 5)
+    ff = fullfit(spec, shifts, order = 9)
     ff.Run(verbose = True)
     ff.plot_result()
     ff.plot_asymm_result()
