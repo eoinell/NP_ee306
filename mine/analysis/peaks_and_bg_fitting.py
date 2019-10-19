@@ -167,8 +167,8 @@ class fullfit:
         plt.plot(self.shifts, self.spec)
         plt.plot(self.shifts,self.bg)
         for peak in self.peaks_stack:
-            plt.plot(self.shifts,self.bg+self.L(self.shifts,*peak)*self.transmission)
-        plt.plot(self.shifts, self.bg+ self.multi_L(self.shifts, *self.peaks)*self.transmission, linestyle = '--', color = 'k')
+            plt.plot(self.shifts,self.bg+self.line(self.shifts,*peak)*self.transmission)
+        plt.plot(self.shifts, self.bg+ self.multi_line(self.shifts, *self.peaks)*self.transmission, linestyle = '--', color = 'k')
         
     def plot_asymm_result(self):
         '''
@@ -608,16 +608,16 @@ if __name__ == '__main__':
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
     spec, shifts = truncate(spec, shifts, 220, np.inf)
-    ff = fullfit(spec, shifts, order = 7)
-
-    ff.Run(verbose = True, lineshape = 'G')
-    ff.plot_result()
-    ff.plot_asymm_result()
-    
-    ff.Run(verbose = True, lineshape = 'L')
-
-    ff.plot_result()
-    ff.plot_asymm_result()
-        
-            	
+    fg = fullfit(spec, shifts, order = 7)
+    fl = fullfit(spec, shifts, order = 7)
+    fg.Run(verbose = True, lineshape = 'G')
+    fg.plot_result()
+    fg.plot_asymm_result()
+#    
+#    fl.Run(verbose = True, lineshape = 'L')
+#
+#    fl.plot_result()
+#    fl.plot_asymm_result()
+#        
+#            	
 
