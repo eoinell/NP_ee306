@@ -167,8 +167,9 @@ class fullfit:
         plt.plot(self.shifts, self.spec)
         plt.plot(self.shifts,self.bg)
         for peak in self.peaks_stack:
-            
-            plt.plot(self.shifts,self.bg+self.line(self.shifts,*peak)*self.transmission)
+            plt.plot(self.shifts,self.bg+self.L(self.shifts,*peak)*self.transmission)
+        plt.plot(self.shifts, self.bg+ self.multi_L(self.shifts, *self.peaks)*self.transmission, linestyle = '--', color = 'k')
+        
     def plot_asymm_result(self):
         '''
         plots the spectrum and the individual peaks
