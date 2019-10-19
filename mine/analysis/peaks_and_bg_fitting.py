@@ -221,7 +221,7 @@ class fullfit:
     
         self.peak_added = False
         i=-1
-        while self.peak_added == False and i<(self.regions/20): #self.region/5s
+        while self.peak_added == False and i<(self.regions/5): #self.region/5s
             
             i+=1
             peak_candidate = Results[sorted_indices[i]]
@@ -610,6 +610,9 @@ if __name__ == '__main__':
     ff = fullfit(spec, shifts, order = 7)
 
     ff.Run(verbose = True, lineshape = 'G')
+    ff.plot_result()
+    ff.plot_asymm_result()
+    
     ff.Run(verbose = True, lineshape = 'L')
 
     ff.plot_result()
