@@ -319,11 +319,10 @@ class fullfit:
         if self.asymm_peaks_stack == None:
             self.peaks_evaluated = self.multi_line(self.shifts, *self.peaks)*self.transmission
         else:
-            self.peaks_evaluated  = self.asymm_multi_L(self.shifts, self.asymm_peaks_stack)*self.transmission
+            self.peaks_evaluated  = self.asymm_multi_L(self.shifts, self.asymm_peaks)*self.transmission
           
         if self.use_exponential == False:       
-            self.bg_vals = minimize(self.bg_loss, self.bg_vals, bounds = self.bg_bounds).x 
-            self.bg_p = np.polyfit(self.shifts[self.bg_indices], self.bg_vals, self.order)
+            self.bg_p = np.polyfit(self.shifts, self.spec - self.peaks_evaluated, self.order)
             self.bg = np.polyval(self.bg_p, self.shifts)
             self.signal =(np.array(self.spec - self.bg)/self.transmission).tolist()
         else:
@@ -428,6 +427,15 @@ class fullfit:
         fit = self.bg + self.multi_line(self.shifts,*self.peaks)*self.transmission
         obj = np.sum(np.square(self.spec - fit))
         return obj            
+    def optimize_peaks_and_bg(self):
+        def loss(peaks_and_bg):
+            fit = np.polyval(peaks_and_bg[:self.order+1], self.shifts) + self.multi_L(peaks_and_bg[self.order+1:])*self.transmission
+            obj = np.sum(np.square(fit-self.spec))
+            return obj
+        
+        peaks_and_bg = np.append(self.bg_p, self.bg)
+        pbgbnds = np.append(self.bg_bounds, self.peak_bounds)
+        peaks_and_bg = minimize(loss, peaks_and_bg, bounds = pbgbnds)
     
     def optimize_asymm(self):
         '''
@@ -464,7 +472,7 @@ class fullfit:
             for peak, width_alpha_beta in zip(self.peaks_stack, width_alpha_beta_stack):
                 params.append(np.append(peak[0:2], width_alpha_beta))
             params = np.array(params)
-            params.flatten()
+            
             fit = self.asymm_multi_L(self.shifts, params)
             obj = np.sum(np.square(self.signal - fit))
             return obj 
@@ -475,7 +483,7 @@ class fullfit:
         wab_stack = width_alpha_beta.reshape(len(width_alpha_beta)/3, 3)
         for peak, width_alpha_beta in zip(self.peaks_stack, wab_stack):
             self.asymm_peaks_stack.append(np.append(peak[0:2], width_alpha_beta).tolist())
-        
+        self.asymm_peaks = np.array(self.asymm_peaks_stack).flatten().tolist()
     def asymm_L(self, shifts, asymmpeak):
         alphashifts = truncate(shifts, shifts, -np.inf, asymmpeak[1])[0]
         betashifts = truncate(shifts, shifts, asymmpeak[1], np.inf)[0]
@@ -483,15 +491,16 @@ class fullfit:
                                (self.line(betashifts, asymmpeak[0], asymmpeak[1], asymmpeak[2]))**asymmpeak[4])
         return to_return
     
-    def asymm_multi_L(self, shifts, params): # params is a stack
+    def asymm_multi_L(self, shifts, params): # params is flat
         fit = np.zeros(len(self.signal))
+        params.reshape(len(params)/5,5)
         for asymmpeak in params:
             fit+=self.asymm_L(self.shifts, asymmpeak)
         return fit
         
-        
+
     
-    def Run(self,lineshape = 'L', initial_fit=None, add_peaks = True, minwidth = 8, maxwidth = 30, regions = 20, noise_factor = 0.01, min_peak_spacing = 4, comparison_thresh = 0.05, verbose = False):    
+    def Run(self,lineshape = 'L', initial_fit=None, add_peaks = True, minwidth = 8, maxwidth = 30, regions = 20, noise_factor = 0.01, min_peak_spacing = 5, comparison_thresh = 0.05, verbose = False):    
     	'''
         described at the top
         '''
