@@ -635,9 +635,9 @@ if __name__ == '__main__':
     os.chdir(r'R:\ee306\Experimental Data\2019.10.04 Particle track 4hr BPT lab 5 power series')
     #os.chdir(r'C:\Users\Eoin Elliott\Desktop\2019.10.14 particle track BPT 4hrs 433nm')
     File = h5py.File(ms.findH5File(os.getcwd()), mode = 'r')
-    scan = File['ParticleScannerScan_3']
+    scan = File['ParticleScannerScan_0']
     spec = scan['Particle_6']['power_series_4'][0]
-    shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 633)
+    shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
     spec, shifts = truncate(spec, shifts, 310, np.inf)
     fg = fullfit(spec, shifts, order = 11, lineshape = 'G')
