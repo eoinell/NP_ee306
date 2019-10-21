@@ -618,7 +618,7 @@ class fullfit:
         #self.optimize_centre_and_width()
         self.optimize_peaks_and_bg()
         if allow_asymmetry == True:
-            print 'asymmetrizing'
+            if verbose == True: print 'asymmetrizing'
             self.optimize_asymm()
 #            for i in range(2):
 #                self.optimize_asymm()
