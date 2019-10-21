@@ -588,11 +588,11 @@ class fullfit:
             dump = 1
         self.optimize_centre_and_width()
         self.optimize_peaks()
-        self.optimize_asymm()
-        for i in range(5):
-            self.optimize_heights()
-            self.optimize_asymm()
-            self.optimize_bg()
+#        self.optimize_asymm()
+#        for i in range(5):
+#            self.optimize_heights()
+#            self.optimize_asymm()
+#            self.optimize_bg()
        
         
 if __name__ == '__main__':
@@ -607,9 +607,9 @@ if __name__ == '__main__':
     spec = scan['Particle_6']['power_series_4'][0]
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
-    spec, shifts = truncate(spec, shifts, 220, np.inf)
+    spec, shifts = truncate(spec, shifts, 310, np.inf)
     fg = fullfit(spec, shifts, order = 7)
-    fl = fullfit(spec, shifts, order = 7)
+#    fl = fullfit(spec, shifts, order = 7)
     fg.Run(verbose = True, lineshape = 'G')
     fg.plot_result()
     fg.plot_asymm_result()
