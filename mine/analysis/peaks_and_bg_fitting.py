@@ -234,7 +234,7 @@ class fullfit:
     
         self.peak_added = False
         i=-1
-        while self.peak_added == False and i<(self.regions/5): #self.region/5s
+        while self.peak_added == False and i<(self.regions-1): #self.region/5s
             
             i+=1
             peak_candidate = Results[sorted_indices[i]]
@@ -285,19 +285,29 @@ class fullfit:
             smoothed = sm.Run(self.spec)
             
             self.bg_indices = argrelextrema(smoothed, np.less)[0].tolist()
-            
-#            for bg_index in self.bg_indices:
-#                for extra in np.arange(2)+1:
-#                    try:
-#                        self.bg_indices.append(bg_index+extra)
-#                    except:
-#                        dump = 1
-#                    try:
-#                        self.bg_indices.append(bg_index-extra)
-#                    except:
-#                        dump = 1
+            residuals = []
+            for index in self.bg_indices:
+                residuals.append(find_closest(index, np.setdiff1d(self.bg_indices, index))[2])
+            norm_fac = 5./max(residuals)
+            extra_lens = norm_fac*np.array(residuals)
+            for bg_index, extra_len in zip(self.bg_indices, extra_lens):
+                extra_len = int(extra_len)
+                if extra_len<1: extra_len = 1
+                for extra in np.arange(extra_len)+1:
+                    try:
+                        self.bg_indices.append(bg_index+extra)
+                    except:
+                        dump = 1
+                    try:
+                        self.bg_indices.append(bg_index-extra)
+                    except:
+                        dump = 1
 #                
             self.bg_vals = smoothed[self.bg_indices]
+            plt.figure()
+            plt.plot(self.shifts,self.spec)
+            plt.plot(self.shifts[self.bg_indices], self.bg_vals, 'o')
+            
             self.bg_bound = (min(self.spec), max(self.spec))
             self.bg_bounds = []
             while len(self.bg_bounds)<len(self.bg_vals):
@@ -305,6 +315,7 @@ class fullfit:
             self.bg_p = np.polyfit(self.shifts[self.bg_indices], self.bg_vals, self.order)
             self.bg = np.polyval(self.bg_p, self.shifts)
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
+            plt.plot(self.shifts, self.bg)
         else:
             self.bg_vals = []
             self.bg_indices = []
@@ -318,7 +329,7 @@ class fullfit:
             self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, min(self.spec)], maxfev = 100000)[0]#, bounds = self.exp_bounds)[0]
             self.bg = self.exponential(self.shifts, *self.bg_p)
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
-    
+            
     def bg_loss(self,bg_vals):
         '''
         evaluates the fit of the background to spectrum-peaks
@@ -423,7 +434,7 @@ class fullfit:
         '''
         if len(self.peaks)<1: return
         for index, peak in enumerate(self.peaks_stack):
-            self.peaks_stack[index][0] = max(truncate(self.signal, self.shifts, peak[1]-peak[2], peak[1]+peak[2])[0])
+            self.peaks_stack[index][0] = max(truncate(self.signal, self.shifts, peak[1]-peak[2]/2, peak[1]+peak[2]/2)[0])
         self.peaks = []
         for peak in self.peaks_stack:#flattens the stack
             for parameter in peak:
@@ -454,8 +465,9 @@ class fullfit:
         self.bg_p = peaks_and_bg[:self.order+1]
         self.bg = np.polyval(self.bg_p, self.shifts)
         self.peaks = peaks_and_bg[self.order+1:]
+
         self.peaks_stack = np.reshape(self.peaks, (len(self.peaks)/3, 3))
-    
+
     def optimize_asymm(self):
         '''
         allows the peaks to become asymmetric by raising either side of the peaks to separate exponents (alpha and beta) 
@@ -586,11 +598,11 @@ class fullfit:
                 self.regions*=5
             
             elif self.peak_added == False:  #Otherwise, same number of peaks?
-#                self.optimize_bg()
-#                self.optimize_heights() # fails if no peaks
-#                self.optimize_centre_and_width()
-#                self.optimize_peaks()
-                self.optimize_peak_and_bg()
+                self.optimize_bg()
+                self.optimize_heights() # fails if no peaks
+                self.optimize_centre_and_width()
+                self.optimize_peaks()
+                #self.optimize_peak_and_bg()
                 New = self.peaks_stack
                 New_trnsp = np.transpose(New)
                 residual = []
@@ -614,13 +626,15 @@ class fullfit:
                 self.regions*=5
             
         #---One last round of optimization for luck---#
-        #self.optimize_bg()
-        #self.optimize_heights()
-        #self.optimize_centre_and_width()
+        self.optimize_bg()
+        self.optimize_heights()
+        self.optimize_centre_and_width()
+        self.plot_result()
         self.optimize_peaks_and_bg()
+        self.plot_result()
         if allow_asymmetry == True:
             if verbose == True: print 'asymmetrizing'
-#            self.optimize_asymm()
+            self.optimize_asymm()
 #            for i in range(2):
 #                self.optimize_asymm()
 #                self.optimize_bg()
@@ -639,15 +653,15 @@ if __name__ == '__main__':
     spec = scan['Particle_6']['power_series_4'][0]
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
-    spec, shifts = truncate(spec, shifts, 310, np.inf)
-    fg = fullfit(spec, shifts, order = 7, lineshape = 'G')
+    spec, shifts = truncate(spec, shifts, 220, np.inf)
+    fg = fullfit(spec, shifts, order = 9, lineshape = 'G')
     
     fg.Run(verbose = True, 
-           comparison_thresh = 0.25, 
-           noise_factor = 3.5, 
+           comparison_thresh = 0.01, 
+           noise_factor = 0.05, 
            minwidth = 2.5,
-           maxwidth = 15,
-           min_peak_spacing = 5,
+           maxwidth = 17,
+           min_peak_spacing = 2.8,
            allow_asymmetry = True)
     fg.plot_result()
     fg.plot_asymm_result()
