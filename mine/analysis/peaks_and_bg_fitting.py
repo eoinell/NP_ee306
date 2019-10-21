@@ -491,7 +491,7 @@ class fullfit:
         
         
     
-    def Run(self,lineshape = 'L', initial_fit=None, add_peaks = True, minwidth = 8, maxwidth = 30, regions = 20, noise_factor = 0.01, min_peak_spacing = 4, comparison_thresh = 0.05, verbose = False):    
+    def Run(self,lineshape = 'L', initial_fit=None, add_peaks = True, minwidth = 8, maxwidth = 30, regions = 20, noise_factor = 0.1, min_peak_spacing = 5, comparison_thresh = 0.05, verbose = False):    
     	'''
         described at the top
         '''
