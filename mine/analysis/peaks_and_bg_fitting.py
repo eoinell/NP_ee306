@@ -169,6 +169,7 @@ class fullfit:
         '''
         omega = -cm_to_omega(x)
         return (A*(np.exp((constants.hbar/constants.k)*omega/T) -1)**-1)*interp(self.shifts, self.transmission)(x) +bg 
+    
     def plot_result(self):
         '''
         plots the spectrum and the individual peaks
@@ -619,7 +620,7 @@ class fullfit:
         self.optimize_peaks_and_bg()
         if allow_asymmetry == True:
             if verbose == True: print 'asymmetrizing'
-            self.optimize_asymm()
+#            self.optimize_asymm()
 #            for i in range(2):
 #                self.optimize_asymm()
 #                self.optimize_bg()
@@ -631,8 +632,8 @@ if __name__ == '__main__':
     import h5py
     import os
     import misc as ms 
-    #os.chdir(r'R:\ee306\Experimental Data\2019.10.04 Particle track 4hr BPT lab 5 power series')
-    os.chdir(r'C:\Users\Eoin Elliott\Desktop\2019.10.14 particle track BPT 4hrs 433nm')
+    os.chdir(r'R:\ee306\Experimental Data\2019.10.04 Particle track 4hr BPT lab 5 power series')
+    #os.chdir(r'C:\Users\Eoin Elliott\Desktop\2019.10.14 particle track BPT 4hrs 433nm')
     File = h5py.File(ms.findH5File(os.getcwd()), mode = 'r')
     scan = File['ParticleScannerScan_3']
     spec = scan['Particle_6']['power_series_4'][0]
@@ -645,8 +646,8 @@ if __name__ == '__main__':
            comparison_thresh = 0.25, 
            noise_factor = 3.5, 
            minwidth = 2.5,
-           maxwidth = 20,
-           min_peak_spacing = 3,
+           maxwidth = 15,
+           min_peak_spacing = 5,
            allow_asymmetry = True)
     fg.plot_result()
     fg.plot_asymm_result()
