@@ -640,7 +640,7 @@ if __name__ == '__main__':
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
     spec, shifts = truncate(spec, shifts, 310, np.inf)
-    fg = fullfit(spec, shifts, order = 11, lineshape = 'G')
+    fg = fullfit(spec, shifts, order = 7, lineshape = 'G')
     
     fg.Run(verbose = True, 
            comparison_thresh = 0.25, 
