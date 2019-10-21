@@ -217,7 +217,7 @@ class fullfit:
     	#-----Minimise loss in each region--------- 
     
     	for i in range(int(self.regions)):
-            Bounds=[(0,np.inf),(i*sectionsize+Start,(i+1)*sectionsize+Start),(self.minwidth,self.maxwidth)]
+            Bounds=[(0,np.inf),(i*sectionsize+Start,(i+1)*sectionsize+Start),(0,max(self.shifts)-min(self.shifts))]
             Centre=(i+np.random.rand())*sectionsize+Start
             try: Height= max(truncate(self.signal, self.shifts, i*sectionsize+Start,(i+1)*sectionsize+Start)[0])-min(self.signal)
             except: Height = self.noise_threshold
@@ -238,7 +238,7 @@ class fullfit:
             i+=1
             peak_candidate = Results[sorted_indices[i]]
             if len(self.peaks)!=0:
-                if peak_candidate[0]>self.noise_threshold:# and peak_candidate[2]>self.minwidth: #has a height, minimum width - maximum width is filtered already                    
+                if peak_candidate[0]>self.noise_threshold and self.maxwidth>peak_candidate[2]>self.minwidth: #has a height, minimum width - maximum width is filtered already                    
                     dump, peak, residual = find_closest(peak_candidate[1],np.transpose(self.peaks_stack)[1])
                     if residual>self.min_peak_spacing*self.peaks_stack[peak][2]:
                         self.peaks = np.append(self.peaks,peak_candidate)
