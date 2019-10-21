@@ -662,14 +662,19 @@ if __name__ == '__main__':
            minwidth = 2.5,
            maxwidth = 17,
            min_peak_spacing = 2.8,
-           allow_asymmetry = True)
+           allow_asymmetry = False)
     fg.plot_result()
     fg.plot_asymm_result()
 #    
-#    fl = fullfit(spec, shifts, order = 15)
-#   fl.Run(verbose = True, lineshape = 'L')
-#    fl.plot_result()
-#    fl.plot_asymm_result()
-#        
-#            	
+    fl = fullfit(spec, shifts, order = 9, lineshape = 'L')
+    
+    fl.Run(verbose = True, 
+           comparison_thresh = 0.01, 
+           noise_factor = 0.05, 
+           minwidth = 2.5,
+           maxwidth = 17,
+           min_peak_spacing = 2.8,
+           allow_asymmetry = False)
+    fl.plot_result()
+    fl.plot_asymm_result()
 
