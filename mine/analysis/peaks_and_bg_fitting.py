@@ -67,6 +67,7 @@ from scipy import constants as constants
 from scipy.interpolate import interp1d as interp
 import pywt
 from nplab.analysis import Auto_Gaussian_Smooth as sm
+from nplab.analysis import smoothing as sm2
 from scipy.signal import argrelextrema
 
 def truncate(counts, wavelengths, lower_cutoff, upper_cutoff, return_indices_only = False):
@@ -234,7 +235,7 @@ class fullfit:
     
         self.peak_added = False
         i=-1
-        while self.peak_added == False and i<(self.regions-1): #self.region/5s
+        while self.peak_added == False and i<(self.regions-2): #self.region/5s
             
             i+=1
             peak_candidate = Results[sorted_indices[i]]
@@ -282,8 +283,8 @@ class fullfit:
             self.bg_vals = []
             self.bg_indices = []
             
-            smoothed = sm.Run(self.spec)
-            
+            try: smoothed = sm.Run(self.spec)
+            except: smoothed = sm2.convex_smooth(self.spec, 25)[0]
             self.bg_indices = argrelextrema(smoothed, np.less)[0].tolist()
             residuals = []
             for index in self.bg_indices:
@@ -304,9 +305,6 @@ class fullfit:
                         dump = 1
 #                
             self.bg_vals = smoothed[self.bg_indices]
-            plt.figure()
-            plt.plot(self.shifts,self.spec)
-            plt.plot(self.shifts[self.bg_indices], self.bg_vals, 'o')
             
             self.bg_bound = (min(self.spec), max(self.spec))
             self.bg_bounds = []
@@ -315,7 +313,6 @@ class fullfit:
             self.bg_p = np.polyfit(self.shifts[self.bg_indices], self.bg_vals, self.order)
             self.bg = np.polyval(self.bg_p, self.shifts)
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
-            plt.plot(self.shifts, self.bg)
         else:
             self.bg_vals = []
             self.bg_indices = []
@@ -433,12 +430,13 @@ class fullfit:
         crudely gets the maximum of the signal within the peak width as an estimate for the peak height
         '''
         if len(self.peaks)<1: return
-        for index, peak in enumerate(self.peaks_stack):
-            self.peaks_stack[index][0] = max(truncate(self.signal, self.shifts, peak[1]-peak[2]/2, peak[1]+peak[2]/2)[0])
-        self.peaks = []
-        for peak in self.peaks_stack:#flattens the stack
-            for parameter in peak:
-                self.peaks.append(parameter)
+        else:   
+            for index, peak in enumerate(self.peaks_stack):
+                self.peaks_stack[index][0] = max(truncate(self.signal, self.shifts, peak[1]-peak[2]/2, peak[1]+peak[2]/2)[0])
+            self.peaks = []
+            for peak in self.peaks_stack:#flattens the stack
+                for parameter in peak:
+                    self.peaks.append(parameter)
     
     def loss_function(self):
         '''
@@ -553,7 +551,7 @@ class fullfit:
             self.minwidth = minwidth/0.95
         
         self.min_peak_spacing = min_peak_spacing
-        self.width=4*self.Wavelet_Estimate_Width()
+        self.width=self.Wavelet_Estimate_Width()
         self.regions = regions
         if self.regions>len(self.spec):	self.regions = len(self.spec)/2 
     	
@@ -561,7 +559,7 @@ class fullfit:
         self.initial_bg_poly()
         if initial_fit is not None:
             self.peaks = initial_fit
-            self.regions = len(self.spec)/10.
+            self.regions = len(self.spec)/20.
             if add_peaks == False: self.regions*=4
             self.peaks_stack = self.peaks_to_matrix(self.peaks)
             height_bound = (self.noise_threshold,max(self.signal))
@@ -584,7 +582,9 @@ class fullfit:
             Old = self.peaks_stack
             self.Add_New_Peak()
             if verbose == True: print '# of peaks:', len(self.peaks)/3
-
+#            self.optimize_heights
+#            self.optimize_centre_and_width()
+            self.optimize_peaks_and_bg()
             new_loss_score = self.loss_function()
     		
             #---Check to increase regions
@@ -629,9 +629,7 @@ class fullfit:
         self.optimize_bg()
         self.optimize_heights()
         self.optimize_centre_and_width()
-        self.plot_result()
         self.optimize_peaks_and_bg()
-        self.plot_result()
         if allow_asymmetry == True:
             if verbose == True: print 'asymmetrizing'
             self.optimize_asymm()
@@ -657,7 +655,7 @@ if __name__ == '__main__':
     fg = fullfit(spec, shifts, order = 9, lineshape = 'G')
     
     fg.Run(verbose = True, 
-           comparison_thresh = 0.01, 
+           comparison_thresh = 0.1, 
            noise_factor = 0.05, 
            minwidth = 2.5,
            maxwidth = 17,
@@ -666,15 +664,15 @@ if __name__ == '__main__':
     fg.plot_result()
     fg.plot_asymm_result()
 #    
-    fl = fullfit(spec, shifts, order = 9, lineshape = 'L')
-    
-    fl.Run(verbose = True, 
-           comparison_thresh = 0.01, 
-           noise_factor = 0.05, 
-           minwidth = 2.5,
-           maxwidth = 17,
-           min_peak_spacing = 2.8,
-           allow_asymmetry = False)
-    fl.plot_result()
-    fl.plot_asymm_result()
+#    fl = fullfit(spec, shifts, order = 9, lineshape = 'L')
+#    
+#    fl.Run(verbose = True, 
+#           comparison_thresh = 0.01, 
+#           noise_factor = 0.05, 
+#           minwidth = 2.5,
+#           maxwidth = 17,
+#           min_peak_spacing = 2.8,
+#           allow_asymmetry = False)
+#    fl.plot_result()
+#    fl.plot_asymm_result()
 
