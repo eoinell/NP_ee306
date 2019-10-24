@@ -235,7 +235,7 @@ class fullfit:
     
         self.peak_added = False
         i=-1
-        while self.peak_added == False and i<(self.regions-2): #self.region/5s
+        while self.peak_added == False and i<(len(Loss_Results)-1): #self.region/5s
             
             i+=1
             peak_candidate = Results[sorted_indices[i]]
@@ -431,12 +431,17 @@ class fullfit:
         '''
         if len(self.peaks)<1: return
         else:   
+           
             for index, peak in enumerate(self.peaks_stack):
-                self.peaks_stack[index][0] = max(truncate(self.signal, self.shifts, peak[1]-peak[2]/2, peak[1]+peak[2]/2)[0])
+                 try:
+                self.peaks_stack[index][0] = max(truncate(self.signal, self.shifts, peak[1]-peak[2]/4., peak[1]+peak[2]/4.)[0])
+                except:
+                    self.peaks_stack[index][0] = self.signal[find_closest(peak[2], self.shifts)[1]]
             self.peaks = []
             for peak in self.peaks_stack:#flattens the stack
                 for parameter in peak:
                     self.peaks.append(parameter)
+        
     
     def loss_function(self):
         '''
@@ -551,7 +556,7 @@ class fullfit:
             self.minwidth = minwidth/0.95
         
         self.min_peak_spacing = min_peak_spacing
-        self.width=self.Wavelet_Estimate_Width()
+        self.width = 2 #4*self.Wavelet_Estimate_Width()
         self.regions = regions
         if self.regions>len(self.spec):	self.regions = len(self.spec)/2 
     	
@@ -595,9 +600,9 @@ class fullfit:
                     self.peak_bounds = self.peak_bounds[0:-3]
                     self.peaks_stack = self.peaks_stack[0:-1]
                     
-                self.regions*=5
+                self.regions*=4
             
-            elif self.peak_added == False:  #Otherwise, same number of peaks?
+            if self.peak_added == False:  #Otherwise, same number of peaks?
                 self.optimize_bg()
                 self.optimize_heights() # fails if no peaks
                 self.optimize_centre_and_width()
@@ -659,11 +664,11 @@ if __name__ == '__main__':
            noise_factor = 0.05, 
            minwidth = 2.5,
            maxwidth = 17,
-           min_peak_spacing = 2.8,
+           min_peak_spacing = 3,
            allow_asymmetry = False)
     fg.plot_result()
     fg.plot_asymm_result()
-#    
+    
 #    fl = fullfit(spec, shifts, order = 9, lineshape = 'L')
 #    
 #    fl.Run(verbose = True, 
