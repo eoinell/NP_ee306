@@ -188,7 +188,7 @@ def get_laser_power_from_leak(power_series, shifts, notch = 150):
         cut =  AP.Run(cut, 1, Auto_Remove = True)
         extracted_powers.append(np.sum(cut))
     return extracted_powers
-def get_peak_heights(counts, wavelengths, shift, Range=4., return_wavelength = False, antiStokes = True, inputcm = False): # shift is in cm-1, range is in nm
+def get_peak_heights(counts, wavelengths, shift, Range=4., return_wavelength = False, antiStokes = True, inputcm = True): # shift is in cm-1, range is in nm
     
     if inputcm==False:    
         S_nm = cnv.cm_to_wavelength(-shift, centre_wl = 785.)
