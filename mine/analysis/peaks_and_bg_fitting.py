@@ -337,18 +337,9 @@ class fullfit:
         
         fit = np.polyval(bg_p, self.shifts)
         residual = self.spec - self.peaks_evaluated - fit
-#        above = []
-#        below = []
-        
-#        for res in enumerate(residual):
-#            if res>0:
-#                above.append(res)
-#            elif res<0:
-#                below.append(res)
-        ########################
         above = residual[residual>0]
         below = residual[residual<0]
-        obj = np.sum(np.array(above)**2)+np.sum(np.array(below)**6)
+        obj = np.sum(np.absolute(above))+np.sum(np.array(below)**6)
         
         return obj
 
@@ -412,7 +403,7 @@ class fullfit:
         for (centre, width) in zip(centres_and_widths_stack[0], centres_and_widths_stack[1]): #
             centre_and_width_bounds+=[(centre-width, centre+width), width_bound]  # height, position, width
         
-        def multi_L_centres_and_widths(x,centres_and_widths):
+        def multi_line_centres_and_widths(x,centres_and_widths):
             """
         	Defines a sum of Lorentzians. Params goes Height1,Centre1, Width1,Height2.....
         	"""
@@ -429,8 +420,8 @@ class fullfit:
         		n+=3
             return Output
         def loss_centres_and_widths(centres_and_widths):
-            fit = multi_L_centres_and_widths(self.shifts,centres_and_widths)
-            obj = np.sum(np.square(self.signal - fit))
+            fit = multi_line_centres_and_widths(self.shifts,centres_and_widths)
+            obj = np.sum(np.square(self.signal - fit).flatten())
             return obj
         centres_and_widths = minimize(loss_centres_and_widths,centres_and_widths, bounds = centre_and_width_bounds).x
         n = 0
@@ -612,9 +603,9 @@ class fullfit:
             Old = self.peaks_stack
             self.Add_New_Peak()
             if verbose == True: print '# of peaks:', len(self.peaks)/3
-            self.optimize_heights
-            self.optimize_centre_and_width()
-            #self.optimize_peaks_and_bg()
+#            self.optimize_heights
+#            self.optimize_centre_and_width()
+            self.optimize_peaks_and_bg()
             new_loss_score = self.loss_function()
     		
             #---Check to increase regions
@@ -628,11 +619,11 @@ class fullfit:
                 self.regions*=4
             
             if self.peak_added == False:  #Otherwise, same number of peaks?
-                self.optimize_bg()
-                self.optimize_heights() # fails if no peaks
-                self.optimize_centre_and_width()
-                self.optimize_peaks()
-                #self.optimize_peak_and_bg()
+#                self.optimize_bg()
+#                self.optimize_heights() # fails if no peaks
+#                self.optimize_centre_and_width()
+#                self.optimize_peaks()
+                self.optimize_peak_and_bg()
                 New = self.peaks_stack
                 New_trnsp = np.transpose(New)
                 residual = []
@@ -682,8 +673,8 @@ if __name__ == '__main__':
     spec = scan['Particle_6']['power_series_4'][0]
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
-    spec, shifts = truncate(spec, shifts, 220, np.inf)
-    fg = fullfit(spec, shifts, order = 11, lineshape = 'G')
+    spec, shifts = truncate(spec, shifts, -np.inf, -220)
+    fg = fullfit(spec, shifts, order = 11, use_exponential = True, lineshape = 'G')
     
     fg.Run(verbose = True, 
            comparison_thresh = 0.1, 
