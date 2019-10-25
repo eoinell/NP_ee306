@@ -59,12 +59,12 @@ as is fitting the stokes and anti-stokes spectra separately.
 """
 import numpy as np
 from scipy.optimize import minimize
-from scipy.optimize import curve_fit as curve_fit
 import matplotlib.pyplot as plt
 import scipy.interpolate as scint
 import scipy.ndimage.filters as ndimf
 from scipy import constants as constants
 from scipy.interpolate import interp1d as interp
+from scipy.optimize import curve_fit
 import pywt
 from nplab.analysis import Auto_Gaussian_Smooth as sm
 from nplab.analysis import smoothing as sm2
@@ -169,7 +169,15 @@ class fullfit:
         uses the transmission for the exponential term, not the constant background.
         '''
         omega = -cm_to_omega(x)
-        return (A*(np.exp((constants.hbar/constants.k)*omega/T) -1)**-1)*interp(self.shifts, self.transmission)(x) +bg 
+        return (A*(np.exp((constants.hbar/constants.k)*omega/T) -1)**-1)*interp(self.shifts, self.transmission)(x) +bg
+    
+    def exponential_loss(self, bg_p):
+        
+        residual = self.exponential(self.shifts, *bg_p) - self.bg
+        above = residual[residual>0]
+        below = residual[residual<0]
+        obj = np.sum(np.absolute(above))+np.sum(np.array(below)**6)
+        return obj
     
     def plot_result(self):
         '''
@@ -195,7 +203,7 @@ class fullfit:
             
             plt.plot(self.shifts,self.bg+self.asymm_line(self.shifts,asymmpeak)*self.transmission)            
                 
-    def Add_New_Peak(self):
+    def add_new_peak(self):
         '''
         lifted from Iterative_Raman_Fitting
         '''
@@ -235,8 +243,7 @@ class fullfit:
     
         self.peak_added = False
         i=-1
-        while self.peak_added == False and i<(len(Loss_Results)-1): #self.region/5s
-            
+        while self.peak_added == False and i<(len(Loss_Results)/2 -1): #self.region/5s
             i+=1
             peak_candidate = Results[sorted_indices[i]]
             if len(self.peaks)!=0:
@@ -279,36 +286,36 @@ class fullfit:
         takes an inital guess at the background VALUES (see optimize bg) by taking order+3 evenly spaced segments
         of the spectum, and taking the minimum as the background value
         '''
-        if self.use_exponential == False:
+        
 
-            try: smoothed = sm.Run(self.spec)
-            except: smoothed = sm2.convex_smooth(self.spec, 25)[0]
-            self.bg_indices = argrelextrema(smoothed, np.less)[0]
-            self.bg_vals = smoothed[self.bg_indices]
+        try: smoothed = sm.Run(self.spec)
+        except: smoothed = sm2.convex_smooth(self.spec, 25)[0]
+        self.bg_indices = argrelextrema(smoothed, np.less)[0]
+        self.bg_vals = smoothed[self.bg_indices]
+        
+        residuals = []
+        for index in self.bg_indices:
+            residuals.append(find_closest(index, np.setdiff1d(self.bg_indices, index))[2])
+        norm_fac = 5./max(residuals)
+        extra_lens = norm_fac*np.array(residuals)
+        for bg_index, extra_len in zip(self.bg_indices, extra_lens):
+            extra_len = int(extra_len)
+            if extra_len<1: extra_len = 1
+            for extra in np.arange(extra_len)+1:
+                try:
+                    self.bg_vals.append(smoothed[bg_index+extra])
+                    self.bg_indices.append(bg_index+extra)
+                except: pass
+                try:
+                    self.bg_vals.append(smoothed[bg_index-extra])
+                    self.bg_indices.append(bg_index-extra)
+                except: pass                    
+        edges = np.arange(5)+1
+        edges = np.append(edges, -edges).tolist()
+        self.bg_indices = np.append(self.bg_indices, edges)
+        self.bg_vals= np.append(self.bg_vals, smoothed[edges])
             
-            residuals = []
-            for index in self.bg_indices:
-                residuals.append(find_closest(index, np.setdiff1d(self.bg_indices, index))[2])
-            norm_fac = 5./max(residuals)
-            extra_lens = norm_fac*np.array(residuals)
-            for bg_index, extra_len in zip(self.bg_indices, extra_lens):
-                extra_len = int(extra_len)
-                if extra_len<1: extra_len = 1
-                for extra in np.arange(extra_len)+1:
-                    try:
-                        self.bg_vals.append(smoothed[bg_index+extra])
-                        self.bg_indices.append(bg_index+extra)
-                    except: pass
-                    try:
-                        self.bg_vals.append(smoothed[bg_index-extra])
-                        self.bg_indices.append(bg_index-extra)
-                    except: pass                    
-            edges = np.arange(5)+1
-            edges = np.append(edges, -edges).tolist()
-            self.bg_indices = np.append(self.bg_indices, edges)
-            self.bg_vals= np.append(self.bg_vals, smoothed[edges])
-                
-            
+        if self.use_exponential == False:
             self.bg_bound = (min(self.spec), max(self.spec))
             self.bg_bounds = []
             while len(self.bg_bounds)<len(self.bg_vals):
@@ -317,15 +324,7 @@ class fullfit:
             self.bg = np.polyval(self.bg_p, self.shifts)
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
         else:
-            self.bg_vals = []
-            self.bg_indices = []
-            for section in range(3):  # A, T, bg
-                    seg_indices = np.array([section,section+1])*len(self.spec)/(5)
-                    seg = self.spec[seg_indices[0]:seg_indices[1]]
-                    self.bg_vals.append(np.min(seg))
-                    self.bg_indices.append(np.argmin(seg)+section*len(self.spec)/(5))
-            #ipdb.set_trace()
-            #self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals)[0] # p0 = [self.spec[-1]*3, 300, min(self.spec)]
+            
             self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, min(self.spec)], maxfev = 100000)[0]#, bounds = self.exp_bounds)[0]
             self.bg = self.exponential(self.shifts, *self.bg_p)
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
@@ -355,11 +354,17 @@ class fullfit:
             self.peaks_evaluated  = self.asymm_multi_line(self.shifts, self.asymm_peaks)*self.transmission
           
         if self.use_exponential == False:       
-            self.bg_p = minimize(self.bg_loss, self.bg_p).x
+            self.bg_p = minimize(self.bg_loss, self.bg_p).x.tolist()
             self.bg = np.polyval(self.bg_p, self.shifts)
             self.signal =(np.array(self.spec - self.bg)/self.transmission).tolist()
         else:
-            self.bg_p = curve_fit(self.exponential, self.shifts, self.spec - self.multi_line(self.shifts, self.peaks)*self.transmission, p0 = self.bg_p, bounds = self.exp_bounds, maxfev = 10000)[0]
+            
+            self.bg_p = curve_fit(self.exponential,
+                                  self.shifts,
+                                  self.spec - self.multi_line(self.shifts, self.peaks)*self.transmission, 
+                                  p0 = self.bg_p,
+                                  bounds = self.exp_bounds,
+                                  maxfev = 10000)[0]
             self.bg = self.exponential(self.shifts, *self.bg_p)
 
     def peaks_to_matrix(self, peak_array):
@@ -420,8 +425,8 @@ class fullfit:
         		n+=3
             return Output
         def loss_centres_and_widths(centres_and_widths):
-            fit = multi_line_centres_and_widths(self.shifts,centres_and_widths)
-            obj = np.sum(np.square(self.signal - fit).flatten())
+            fit = multi_line_centres_and_widths(self.shifts, centres_and_widths)
+            obj = np.sum(np.square(self.signal - fit))
             return obj
         centres_and_widths = minimize(loss_centres_and_widths,centres_and_widths, bounds = centre_and_width_bounds).x
         n = 0
@@ -459,31 +464,49 @@ class fullfit:
         obj = np.sum(np.square(self.spec - fit))
         return obj            
     def optimize_peaks_and_bg(self):
-        def loss(peaks_and_bg):
-            fit = np.polyval(peaks_and_bg[:self.order+1], self.shifts) 
-            fit+= self.multi_line(self.shifts, peaks_and_bg[self.order+1:])*self.transmission
-            residual = fit-self.spec
-            above = []
-            below = []
-            for res in enumerate(residual):
-                if res>0:
-                    above.append(res)
-                elif res<0:
-                    below.append(res)
-            obj = np.sum(np.array(above)**2)+np.sum(np.array(below)**6)
-          
-            return obj
+        if self.use_exponential == False:
+            def loss(peaks_and_bg):
+                fit = np.polyval(peaks_and_bg[:self.order+1], self.shifts) 
+                fit+= self.multi_line(self.shifts, peaks_and_bg[self.order+1:])*self.transmission
+                residual = self.spec - fit
+                above = residual[residual>0]
+                below = residual[residual<0]
+                obj = np.sum(np.absolute(above))+np.sum(np.array(below)**6)
+                return obj
+            peaks_and_bg = np.append(self.bg_p, self.peaks)
+            bounds = []
+            bgbnd = (-np.inf, np.inf)
+            while len(bounds)<len(self.bg_p):
+                bounds.append(bgbnd)
+            bounds.extend(self.peak_bounds)
+            peaks_and_bg = minimize(loss, peaks_and_bg, bounds = bounds).x.tolist()
+            if self.use_exponential == False: 
+                self.bg_p = peaks_and_bg[:self.order+1]
+                self.peaks = peaks_and_bg[self.order+1:]
+                self.bg = np.polyval(self.bg_p, self.shifts)
+        else:
+            def loss(peaks_and_bg):
+                fit = self.exponential(self.shifts, *peaks_and_bg[:3])
+                fit+= self.multi_line(self.shifts, peaks_and_bg[3:])*self.transmission
+                residual = self.spec - fit
+                above = residual[residual>0]
+                below = residual[residual<0]
+                obj = np.sum(np.absolute(above))+np.sum(np.array(below)**2)
+                #obj = np.sum(residual)
+                return obj
         
-        peaks_and_bg = np.append(self.bg_p, self.peaks)
-        bounds = []
-        bgbnd = (-np.inf, np.inf)
-        while len(bounds)<len(self.bg_p):
-            bounds.append(bgbnd)
-        bounds.extend(self.peak_bounds)
-        peaks_and_bg = minimize(loss, peaks_and_bg, bounds = bounds).x
-        self.bg_p = peaks_and_bg[:self.order+1]
-        self.bg = np.polyval(self.bg_p, self.shifts)
-        self.peaks = peaks_and_bg[self.order+1:]
+            peaks_and_bg = np.append(self.bg_p, self.peaks)
+            bounds = [(0, max(self.spec)*10),
+                     (100,1000),
+                     (min(self.spec*0.7), max(self.spec))]
+                     
+            bounds.extend(self.peak_bounds)
+            peaks_and_bg = minimize(loss, peaks_and_bg, bounds = bounds).x
+            self.bg_p = peaks_and_bg[:3]
+            self.peaks = peaks_and_bg[3:]
+            self.bg = self.exponential(self.shifts, *self.bg_p)
+        
+        
 
         self.peaks_stack = np.reshape(self.peaks, (len(self.peaks)/3, 3))
 
@@ -581,7 +604,7 @@ class fullfit:
         if initial_fit is not None:
             self.peaks = initial_fit
             self.regions = len(self.spec)/20.
-            if add_peaks == False: self.regions*=4
+            if add_peaks == False: self.regions**10
             self.peaks_stack = self.peaks_to_matrix(self.peaks)
             height_bound = (self.noise_threshold,max(self.signal))
             pos_bound = (np.min(self.shifts),np.max(self.shifts))
@@ -601,7 +624,7 @@ class fullfit:
             if verbose == True: print 'Region fraction: ', np.around(self.regions/float(len(self.spec)), decimals = 2)
             existing_loss_score = self.loss_function()
             Old = self.peaks_stack
-            self.Add_New_Peak()
+            self.add_new_peak()
             if verbose == True: print '# of peaks:', len(self.peaks)/3
 #            self.optimize_heights
 #            self.optimize_centre_and_width()
@@ -617,13 +640,13 @@ class fullfit:
                     self.peaks_stack = self.peaks_stack[0:-1]
                     
                 self.regions*=4
-            
-            if self.peak_added == False:  #Otherwise, same number of peaks?
+                
+            elif self.peak_added == False:  #Otherwise, same number of peaks?
 #                self.optimize_bg()
 #                self.optimize_heights() # fails if no peaks
 #                self.optimize_centre_and_width()
 #                self.optimize_peaks()
-                self.optimize_peak_and_bg()
+                self.optimize_peaks_and_bg()
                 New = self.peaks_stack
                 New_trnsp = np.transpose(New)
                 residual = []
@@ -673,17 +696,21 @@ if __name__ == '__main__':
     spec = scan['Particle_6']['power_series_4'][0]
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
-    spec, shifts = truncate(spec, shifts, -np.inf, -220)
-    fg = fullfit(spec, shifts, order = 11, use_exponential = True, lineshape = 'G')
+    spec, shifts = truncate(spec, shifts, -930, -220)
+    ff = fullfit(spec, shifts, order = 11, use_exponential = True, lineshape = 'G')
     
-    fg.Run(verbose = True, 
+    
+    ff.Run(verbose = True, 
            comparison_thresh = 0.1, 
            noise_factor = 1, 
            minwidth = 2.5,
-           maxwidth = 17,
+           maxwidth = 14,
            min_peak_spacing = 3,
+           add_peaks = False,
            allow_asymmetry = False)
-    fg.plot_result()
+
+    ff.plot_result()
+#    fg.plot_result()
     #fg.plot_asymm_result()
     
 #    fl = fullfit(spec, shifts, order = 9, lineshape = 'L')
