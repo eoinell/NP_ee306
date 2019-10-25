@@ -141,7 +141,7 @@ class fullfit:
         self.lineshape = lineshape
         self.peak_bounds = []
         self.use_exponential = use_exponential
-        if use_exponential == True: self.exp_bounds = ([0, 0, 0,],[np.inf,np.inf, max(self.spec)])
+        if use_exponential == True: self.exp_bounds = ([0, 0, 0,],[np.inf,np.inf, 1e-9])
     
     def L(self, x, H, C, W): # height centre width
     	"""
@@ -176,7 +176,7 @@ class fullfit:
         residual = self.exponential(self.shifts, *bg_p) - self.bg
         above = residual[residual>0]
         below = residual[residual<0]
-        obj = np.sum(np.absolute(above))+np.sum(np.array(below)**6)
+        obj = np.sum(np.absolute(above))+np.sum(np.array(below)**2)
         return obj
     
     def plot_result(self):
@@ -325,7 +325,7 @@ class fullfit:
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
         else:
             
-            self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, min(self.spec)], maxfev = 100000)[0]#, bounds = self.exp_bounds)[0]
+            self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, 1E-10], maxfev = 100000, bounds = self.exp_bounds)[0]
             self.bg = self.exponential(self.shifts, *self.bg_p)
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
             
@@ -498,7 +498,7 @@ class fullfit:
             peaks_and_bg = np.append(self.bg_p, self.peaks)
             bounds = [(0, max(self.spec)*10),
                      (100,1000),
-                     (min(self.spec*0.7), max(self.spec))]
+                     (min(self.spec*0.7), 1e-9)]
                      
             bounds.extend(self.peak_bounds)
             peaks_and_bg = minimize(loss, peaks_and_bg, bounds = bounds).x
@@ -595,7 +595,7 @@ class fullfit:
             self.minwidth = minwidth/0.95
         
         self.min_peak_spacing = min_peak_spacing
-        self.width = 2 #4*self.Wavelet_Estimate_Width()
+        self.width = 4*self.Wavelet_Estimate_Width()
         self.regions = regions
         if self.regions>len(self.spec):	self.regions = len(self.spec)/2 
     	
@@ -604,7 +604,7 @@ class fullfit:
         if initial_fit is not None:
             self.peaks = initial_fit
             self.regions = len(self.spec)/20.
-            if add_peaks == False: self.regions**10
+            if add_peaks == False: self.regions*=21
             self.peaks_stack = self.peaks_to_matrix(self.peaks)
             height_bound = (self.noise_threshold,max(self.signal))
             pos_bound = (np.min(self.shifts),np.max(self.shifts))
