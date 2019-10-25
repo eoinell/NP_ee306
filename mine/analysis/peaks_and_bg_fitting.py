@@ -604,7 +604,7 @@ class fullfit:
         if initial_fit is not None:
             self.peaks = initial_fit
             self.regions = len(self.spec)/20.
-            if add_peaks == False: self.regions**10
+            if add_peaks == False: self.regions*=21
             self.peaks_stack = self.peaks_to_matrix(self.peaks)
             height_bound = (self.noise_threshold,max(self.signal))
             pos_bound = (np.min(self.shifts),np.max(self.shifts))
