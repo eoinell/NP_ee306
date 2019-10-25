@@ -170,10 +170,16 @@ class fullfit:
         '''
         omega = -cm_to_omega(x)
         return (A*(np.exp((constants.hbar/constants.k)*omega/T) -1)**-1)*interp(self.shifts, self.transmission)(x) +bg
+    def exponential2(self, x, A, T, bg):
+        '''
+        uses the transmission for the exponential term, not the constant background.
+        '''
+        omega = -cm_to_omega(x)
+        return A*(((np.exp((constants.hbar/constants.k)*omega/T) -1)**-1)+(np.exp((constants.hbar/constants.k)*omega/298.) -1)**-1)*interp(self.shifts, self.transmission)(x) +bg
     
     def exponential_loss(self, bg_p):
         
-        residual = self.exponential(self.shifts, *bg_p) - self.bg
+        residual = self.exponential2(self.shifts, *bg_p) - self.bg
         above = residual[residual>0]
         below = residual[residual<0]
         obj = np.sum(np.absolute(above))+np.sum(np.array(below)**2)
@@ -181,8 +187,8 @@ class fullfit:
     
     def plot_result(self):
         '''
-        plots the spectrum and the individual peaks
-        note that areas where the peaks overlap aren't added together, so fits may appear off.
+        plots the spectrum and the individual peaks, and their sums
+        
         '''
         plt.figure()
         plt.plot(self.shifts, self.spec)
@@ -193,8 +199,7 @@ class fullfit:
         
     def plot_asymm_result(self):
         '''
-        plots the spectrum and the individual peaks
-        note that areas where the peaks overlap aren't added together, so fits may appear off.
+        plots the spectrum and the individual after aysmmetrization
         '''
         plt.figure()
         plt.plot(self.shifts, self.spec)
@@ -325,8 +330,8 @@ class fullfit:
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
         else:
             
-            self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, 1E-10], maxfev = 100000, bounds = self.exp_bounds)[0]
-            self.bg = self.exponential(self.shifts, *self.bg_p)
+            self.bg_p = curve_fit(self.exponential2, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, 1E-10], maxfev = 100000, bounds = self.exp_bounds)[0]
+            self.bg = self.exponential2(self.shifts, *self.bg_p)
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
             
     def bg_loss(self,bg_p):
@@ -359,13 +364,13 @@ class fullfit:
             self.signal =(np.array(self.spec - self.bg)/self.transmission).tolist()
         else:
             
-            self.bg_p = curve_fit(self.exponential,
+            self.bg_p = curve_fit(self.exponential2,
                                   self.shifts,
                                   self.spec - self.multi_line(self.shifts, self.peaks)*self.transmission, 
                                   p0 = self.bg_p,
                                   bounds = self.exp_bounds,
                                   maxfev = 10000)[0]
-            self.bg = self.exponential(self.shifts, *self.bg_p)
+            self.bg = self.exponential2(self.shifts, *self.bg_p)
 
     def peaks_to_matrix(self, peak_array):
         '''
@@ -486,7 +491,7 @@ class fullfit:
                 self.bg = np.polyval(self.bg_p, self.shifts)
         else:
             def loss(peaks_and_bg):
-                fit = self.exponential(self.shifts, *peaks_and_bg[:3])
+                fit = self.exponential2(self.shifts, *peaks_and_bg[:3])
                 fit+= self.multi_line(self.shifts, peaks_and_bg[3:])*self.transmission
                 residual = self.spec - fit
                 above = residual[residual>0]
@@ -504,7 +509,7 @@ class fullfit:
             peaks_and_bg = minimize(loss, peaks_and_bg, bounds = bounds).x
             self.bg_p = peaks_and_bg[:3]
             self.peaks = peaks_and_bg[3:]
-            self.bg = self.exponential(self.shifts, *self.bg_p)
+            self.bg = self.exponential2(self.shifts, *self.bg_p)
         
         
 
