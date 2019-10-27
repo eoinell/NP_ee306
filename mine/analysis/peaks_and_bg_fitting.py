@@ -125,7 +125,8 @@ class fullfit:
                  lineshape = 'L',
                  order = 3,
                  transmission = None,
-                 use_exponential = False):
+                 use_exponential = False,
+                 vary_const_bg = True):
         
         self.spec = spec
         self.shifts = shifts
@@ -142,7 +143,10 @@ class fullfit:
         self.lineshape = lineshape
         self.peak_bounds = []
         self.use_exponential = use_exponential
-        if use_exponential == True: self.exp_bounds = ([0, 0, 0,],[np.inf,np.inf, 1e-9])
+        self.vary_const_bg = vary_const_bg
+        if use_exponential == True:
+            if vary_const_bg != True: self.exp_bounds = ([0, 0, 0,],[np.inf,np.inf, 1e-9])
+            else: self.exp_bounds = ([0, 0, 0,],[np.inf,np.inf, np.inf])
     
     def L(self, x, H, C, W): # height centre width
     	"""
@@ -326,7 +330,10 @@ class fullfit:
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
         else:
             
-            self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, 1E-10], maxfev = 100000, bounds = self.exp_bounds)[0]
+            if self.vary_const_bg == False:
+                self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, 1E-10], maxfev = 100000, bounds = self.exp_bounds)[0]
+            else:
+                self.bg_p = curve_fit(self.exponential, self.shifts[self.bg_indices], self.bg_vals, p0 = [0.5*max(self.spec), 300, min(self.spec)], maxfev = 100000, bounds = self.exp_bounds)[0]
             self.bg = self.exponential(self.shifts, *self.bg_p)
             self.signal = ((np.array(self.spec - self.bg))/self.transmission).tolist()
             
@@ -497,9 +504,14 @@ class fullfit:
                 return obj
         
             peaks_and_bg = np.append(self.bg_p, self.peaks)
-            bounds = [(0, max(self.spec)*10),
-                     (100,1000),
-                     (min(self.spec*0.7), 1e-9)]
+            if self.vary_const_bg == False:
+                bounds = [(0, max(self.spec)*10),
+                         (100,1000),
+                         (min(self.spec*0.7), 1e-9)]
+            else:
+                 bounds = [(0, max(self.spec)*10),
+                         (100,1000),
+                         (min(self.spec*0.7), max(self.spec))]
                      
             bounds.extend(self.peak_bounds)
             peaks_and_bg = minimize(loss, peaks_and_bg, bounds = bounds).x
