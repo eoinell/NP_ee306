@@ -69,6 +69,7 @@ import pywt
 from nplab.analysis import Auto_Gaussian_Smooth as sm
 from nplab.analysis import smoothing as sm2
 from scipy.signal import argrelextrema
+import random
 
 def truncate(counts, wavelengths, lower_cutoff, upper_cutoff, return_indices_only = False):
     '''
@@ -573,7 +574,34 @@ class fullfit:
         return fit
         
 
-    
+    def dummyRun(self,
+            initial_fit=None, 
+            add_peaks = True, 
+            allow_asymmetry = False,
+            minwidth = 8, 
+            maxwidth = 30, 
+            regions = 20, noise_factor = 0.01, 
+            min_peak_spacing = 5, 
+            comparison_thresh = 0.05, 
+            verbose = False):    
+        '''
+        handy to test other scripts quickly
+        '''
+        top = max(self.spec)
+        centres = [random.choice(self.shifts[len(self.shifts)/3 : len(self.shifts)*2/3]) for i in range(4)]
+        if initial_fit is not None:
+            self.peaks = initial_fit
+            for index, dump in enumerate(self.peaks):
+                if index%3 == 0:
+                    self.peaks[index] = np.random.rand()*top
+        else:
+            self.peaks = [np.random.rand()*top, centres[0], 15,
+                          np.random.rand()*top, centres[1], 15, 
+                          np.random.rand()*top, centres[2], 15,
+                          np.random.rand()*top, centres[3], 15]
+        self.peaks_stack = np.reshape(self.peaks, [len(self.peaks)/3, 3])
+        self.initial_bg_poly()
+        
     def Run(self,
             initial_fit=None, 
             add_peaks = True, 
