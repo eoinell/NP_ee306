@@ -184,7 +184,7 @@ class fullfit:
     
     def exponential_loss(self, bg_p):
         
-        residual = self.exponential2(self.shifts, *bg_p) - self.bg
+        residual = self.exponential(self.shifts, *bg_p) - self.bg
         above = residual[residual>0]
         below = residual[residual<0]
         obj = np.sum(np.absolute(above))+np.sum(np.array(below)**2)
@@ -372,13 +372,13 @@ class fullfit:
             self.signal =(np.array(self.spec - self.bg)/self.transmission).tolist()
         else:
             
-            self.bg_p = curve_fit(self.exponential2,
+            self.bg_p = curve_fit(self.exponential,
                                   self.shifts,
                                   self.spec - self.multi_line(self.shifts, self.peaks)*self.transmission, 
                                   p0 = self.bg_p,
                                   bounds = self.exp_bounds,
                                   maxfev = 10000)[0]
-            self.bg = self.exponential2(self.shifts, *self.bg_p)
+            self.bg = self.exponential(self.shifts, *self.bg_p)
 
     def peaks_to_matrix(self, peak_array):
         '''
@@ -412,9 +412,7 @@ class fullfit:
         '''
         heights = np.transpose(self.peaks_stack)[0]
         centres_and_widths_stack = np.transpose(self.peaks_stack)[1:]
-        centres_and_widths = []
-        for peak in np.transpose(centres_and_widths_stack).tolist():#flattens the stack
-            centres_and_widths.extend(peak)
+        centres_and_widths = np.ravel(centres_and_widths_stack)
         width_bound = (self.minwidth,self.maxwidth)
         centre_and_width_bounds = []
 
@@ -431,12 +429,8 @@ class fullfit:
                 params.append(heights[n/2])
                 params.extend(centres_and_widths[n:n+2])
                 n+=2
-            Output=0
-            n=0
-            while n<len(params):
-        		Output+=self.line(x,*params[n:n+3])
-        		n+=3
-            return Output
+            return self.multi_line(self.shifts, params)
+        
         def loss_centres_and_widths(centres_and_widths):
             fit = multi_line_centres_and_widths(self.shifts, centres_and_widths)
             obj = np.sum(np.square(self.signal - fit))
@@ -499,7 +493,7 @@ class fullfit:
                 self.bg = np.polyval(self.bg_p, self.shifts)
         else:
             def loss(peaks_and_bg):
-                fit = self.exponential2(self.shifts, *peaks_and_bg[:3])
+                fit = self.exponential(self.shifts, *peaks_and_bg[:3])
                 fit+= self.multi_line(self.shifts, peaks_and_bg[3:])*self.transmission
                 residual = self.spec - fit
                 above = residual[residual>0]
@@ -522,7 +516,7 @@ class fullfit:
             peaks_and_bg = minimize(loss, peaks_and_bg, bounds = bounds).x
             self.bg_p = peaks_and_bg[:3]
             self.peaks = peaks_and_bg[3:]
-            self.bg = self.exponential2(self.shifts, *self.bg_p)
+            self.bg = self.exponential(self.shifts, *self.bg_p)
         
         
 
@@ -715,11 +709,11 @@ class fullfit:
                 self.regions*=5
             
         #---One last round of optimization for luck---#
-        self.optimize_bg()
-        self.optimize_heights()
-        self.optimize_centre_and_width()
-        self.optimize_peaks()
-        #self.optimize_peaks_and_bg()
+#        self.optimize_bg()
+#        self.optimize_heights()
+ #       self.optimize_centre_and_width()
+#        self.optimize_peaks()
+        self.optimize_peaks_and_bg()
         if allow_asymmetry == True:
             if verbose == True: print 'asymmetrizing'
             self.optimize_asymm()
