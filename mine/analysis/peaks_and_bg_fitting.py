@@ -6,43 +6,69 @@ Created on Mon Jul 15 11:50:45 2019
 
 The fullfit class is the main thing here - sample use:
     from nplab.analysis.peaks_and_bg_fitting import fullfit
-    ff = fullfit(self, spec, shifts, order = 3, transmission = None, use_exponential = False) # initialise the object. The order key-word argument is the order of the background polynomial. 3 works well. above 9 is unstable.
-    transmission is the instrument response function of the detector. It's necessary to include it here rather than in the raw data as most of the background is electronic, so dividing this by the IRF introduces unphysical features.
-    This way, the IRF is only applied to the background-subtracted signal 
-    use_exponential determines whether or not to use an exponential fit rather than a polynomial - useful for extracting antistokes temperatures
+    ff = fullfit( 
+                 spec,
+                 shifts, 
+                 lineshape = 'L',
+                 order = 7,
+                 transmission = None,
+                 use_exponential = False,
+                 vary_const_bg = True)
+    #   initialise the object.
+        spec, shiftis are the spectrum and their shifts
+        lineshape can be 'L' (Lorentzian) or 'G' (Gaussian). Gaussians are less broad
+        The 'order' key-word argument is the order of the background polynomial. 3 works well. above 9 is unstable.
+        transmission is the instrument response function of the detector. It's necessary to include it here rather than in the raw data as most of the background is electronic, so dividing this by the IRF introduces unphysical features.
+        This way, the IRF is only applied to the background-subtracted signal 
+        use_exponential determines whether or not to use an exponential fit rather than a polynomial - useful for extracting antistokes temperatures
+        set vary_const_bg to False if the spectrum is already (electronic) background subtracted and you're using an exponential fit
+    
     ff.Run() # this does the actual fitting.
-    then the peaks are stored as 
-    ff.peaks # 1d list of parameters: height, x-position, and width. Plot with ff.multi_L
+                then the peaks are stored as 
+    ff.peaks # 1d list of parameters: height, x-position, and width. Plot with ff.multi_L(peaks)
     ff.peaks_stack has them in a 2d array so you can plot the peaks individually like so:
         for peak in ff.peaks_stack:
             plt.plot(ff.shifts, ff.L(ff.shifts, peak))
     ff.bg gives the background as a 1d array.
     ff.signal gives the background-subtracted spectrum, divided by the transmission
+    ff.bg_p gives the polynomial coefficients, or in the case of exponential background Amplitude, Temperature and constant background
 
 The fitting works as follows: 
-    Run(self,initial_fit=None, add_peaks = True, minwidth = 2, maxwidth = 10, regions = 20, noise_factor = 0.6, min_peak_spacing = 7, comparison_thresh = 0.1, verbose = False):   
-        initial fit should be a 1D array of height, centre widths.
+    Run(self,
+            initial_fit=None, 
+            add_peaks = True, 
+            allow_asymmetry = False,
+            minwidth = 8, 
+            maxwidth = 30, 
+            regions = 20, noise_factor = 0.01, 
+            min_peak_spacing = 5, 
+            comparison_thresh = 0.05, 
+            verbose = False):  
+        
+        initial fit should be a 1D array of height, centre widths (or None).
         if add_peaks is True, then the code will try to add additional peaks. If you're happy with the peaks already, set = False and it will just optimize a background and the peaks
+        allow_asymmetry, if true allows the peaks to become asymmetric as a final step. see optimize_asymm(self) for details
         minwidth  is the minimum  width a fitted peak can have.
         maxwidth is the maximum width a peak can have.
-        regions works as in Iterative_Raman_Fitting
+        regions works as in Iterative_Raman_Fitting - see add_new_peak for details
         noise_factor is the minimum height above the noise level a peak must have. It's not connected to anything physical however, just tune it to exclude/include lower S:N peaks
         min_peak_spacing is the minimum separation (in # of peak widths) a new peak must have from all existing peaks. Prevents multiple Lorentzians being fitted to the one peak.
         comparison_thresh  is the fractional difference allowed between fit optimisations for the peak to be considered fitted.
     
     initial_bg_poly() takes a guess at what the background is. The signal is (spectrum-bg)/transmission
     
-    Add_New_Peak() forcibly adds a peak to the signal as in Iterative_Raman_fitting.
-        The only difference is that there are bounds on the peak parameters, and if the peak is within min_peak_separation*peak width of 
-    any other peak, it picks the next best peak, and so on until the best 1/3 of the peaks have been tested. Else, it doesn't add a new peak at all.
-    
-    The peak heights are then somewhat manually assigned by getting the maximum of the signal around the peak centre.
+    if initial_fit is included, the peak heights are then somewhat manually assigned by getting the maximum of the signal around the peak centre.
     The widths and centres of the peaks are then optimised for these heights.
     optionally, you can include the commented out self.optimize_peaks() here to optimise all the peak parameters together but I leave this to the end.
     
+    add_new_peak() forcibly adds a peak to the signal similarly to in Iterative_Raman_fitting.
+    
+    
+    
     If this new peak improves the fit, it adds another peak, repeats.
+    
     Else, if it doesn't improve the fit (a sign that the right # of peaks have been added) the number of regions is multiplied by 5 to try more possible places to add a peak.
-    It also now optimises the background, as doing so before will make it cut through the un-fitted peaks
+    It also now optimises the background with the peaks, as doing so before will make it cut through the un-fitted peaks
     
     If no new peak has been added (again, a good sign) the rest of the function matches each peak with its nearest neighbour (hopefully itself)
     from before the latest round of optimisation. If none of the peaks have moved by comparison_thresh*sqrt(height and width added in quadrature)
@@ -52,9 +78,7 @@ The fitting works as follows:
     
 This script uses cm-1 for shifts. Using wavelengths is fine, but make sure and adjust the maxwidth, minwidth parameters accordingly   
 
-the width parameter is not the FWHM, for computational simplicity, but is proportional.
-
-The time taken to fit increases non-linearly with spectrum size/length, so cutting out irrelevant regions such as the notch is important, 
+The time taken to fit increases a lot with spectrum size/length, so cutting out irrelevant regions such as the notch is important, 
 as is fitting the stokes and anti-stokes spectra separately. 
 """
 import numpy as np
@@ -116,6 +140,9 @@ def Grad(Array):
 	return (A-B)[1:-1]
 
 def cm_to_omega(cm):
+    '''
+    converts cm^-1 to angular frequency
+    '''
     return 2*np.pi*constants.c*100.*cm
 
 class fullfit:
@@ -123,7 +150,7 @@ class fullfit:
                  spec,
                  shifts, 
                  lineshape = 'L',
-                 order = 3,
+                 order = 7,
                  transmission = None,
                  use_exponential = False,
                  vary_const_bg = True):
@@ -155,12 +182,15 @@ class fullfit:
 
         return H/(1.+(((x-C)/W)**2))
     def G(self, x, H, C, W ):
-          return H*np.exp(-((x-C)/W)**2)
+        '''
+        A Gaussian
+        '''
+        return H*np.exp(-((x-C)/W)**2)
     
 
     def multi_line(self,x,Params):
     	"""
-    	returns a sum of Lorentzians. Params goes Height1,Centre1, Width1,Height2.....
+    	returns a sum of Lorenzians/Gaussians. Params goes Height1,Centre1, Width1,Height2.....
     	"""
     	Output=np.zeros(len(x))
     	n=0
@@ -177,13 +207,15 @@ class fullfit:
         return (A*(np.exp((constants.hbar/constants.k)*omega/T) -1)**-1)*interp(self.shifts, self.transmission)(x) +bg
     def exponential2(self, x, A, T, bg):
         '''
-        uses the transmission for the exponential term, not the constant background.
+        uses the a more conplicated exponential 
         '''
         omega = -cm_to_omega(x)
         return A*(((np.exp((constants.hbar/constants.k)*omega/T) -1)**-1)+(np.exp((constants.hbar/constants.k)*omega/298.) -1)**-1)*interp(self.shifts, self.transmission)(x) +bg
     
     def exponential_loss(self, bg_p):
-        
+        '''
+        evaluates fit of exponential to spectrum-signal
+        '''
         residual = self.exponential(self.shifts, *bg_p) - self.bg
         above = residual[residual>0]
         below = residual[residual<0]
@@ -253,22 +285,22 @@ class fullfit:
     
         self.peak_added = False
         i=-1
-        while self.peak_added == False and i<(len(Loss_Results)/2 -1): #self.region/5s
+        while self.peak_added == False and i<(len(Loss_Results)/2 -1): # test the top 50% of peaks
             i+=1
             peak_candidate = Results[sorted_indices[i]]
-            if len(self.peaks)!=0:
-                if peak_candidate[0]>self.noise_threshold and self.maxwidth>peak_candidate[2]>self.minwidth: #has a height, minimum width - maximum width is filtered already                    
+            if peak_candidate[0]>self.noise_threshold and self.maxwidth>peak_candidate[2]>self.minwidth: #has a height, minimum width - maximum width are within bounds     
+                if len(self.peaks)!=0: 
                     dump, peak, residual = find_closest(peak_candidate[1],np.transpose(self.peaks_stack)[1])
-                    if residual>self.min_peak_spacing*self.peaks_stack[peak][2]:
+                    if residual>self.min_peak_spacing*self.peaks_stack[peak][2]: # is far enough away from existing peaks
                         self.peaks = np.append(self.peaks,peak_candidate)
                         self.peaks_stack = self.peaks_to_matrix(self.peaks)
                         self.peak_added = True
 
                     
-            else:
-                self.peaks = np.append(self.peaks,peak_candidate)
-                self.peaks_stack = self.peaks_to_matrix(self.peaks)
-                self.peak_added = True
+                else: # If no existing peaks, accept it
+                    self.peaks = np.append(self.peaks,peak_candidate)
+                    self.peaks_stack = self.peaks_to_matrix(self.peaks)
+                    self.peak_added = True
        
         if self.peak_added == True:
             height_bound = (self.noise_threshold,max(self.signal))
@@ -293,8 +325,10 @@ class fullfit:
 
     def initial_bg_poly(self):
         '''
-        takes an inital guess at the background VALUES (see optimize bg) by taking order+3 evenly spaced segments
-        of the spectum, and taking the minimum as the background value
+        takes an inital guess at the background.
+        takes the local minima of the smoothed spectrum, weighted by how far they are to other minima, and fits to these.
+        weighting is to prioritise flatter portions of the spectrum (which would naturally have fewer minima)
+        
         '''
         
 
@@ -351,7 +385,7 @@ class fullfit:
         residual = self.spec - self.peaks_evaluated - fit
         above = residual[residual>0]
         below = residual[residual<0]
-        obj = np.sum(np.absolute(above))+np.sum(np.array(below)**6)
+        obj = np.sum(np.absolute(above))+np.sum(np.array(below)**2)
         
         return obj
 
@@ -470,7 +504,11 @@ class fullfit:
         fit = self.bg + self.multi_line(self.shifts, self.peaks)*self.transmission
         obj = np.sum(np.square(self.spec - fit))
         return obj            
+    
     def optimize_peaks_and_bg(self):
+        '''
+        optimizes the peaks and background in one procedure, allows for better interplay of peaks and bg
+        '''
         if self.use_exponential == False:
             def loss(peaks_and_bg):
                 fit = np.polyval(peaks_and_bg[:self.order+1], self.shifts) 
@@ -478,7 +516,7 @@ class fullfit:
                 residual = self.spec - fit
                 above = residual[residual>0]
                 below = residual[residual<0]
-                obj = np.sum(np.absolute(above))+np.sum(np.array(below)**6)
+                obj = np.sum(np.absolute(above))+np.sum(np.array(below)**2) # prioritises fitting the background to lower data points
                 return obj
             peaks_and_bg = np.append(self.bg_p, self.peaks)
             bounds = []
@@ -498,8 +536,7 @@ class fullfit:
                 residual = self.spec - fit
                 above = residual[residual>0]
                 below = residual[residual<0]
-                obj = np.sum(np.absolute(above))+np.sum(np.array(below)**2)
-                #obj = np.sum(residual)
+                obj = np.sum(np.absolute(above))+np.sum(np.array(below)**2) # prioritises fitting the background to lower data points
                 return obj
         
             peaks_and_bg = np.append(self.bg_p, self.peaks)
@@ -569,6 +606,10 @@ class fullfit:
         self.asymm_peaks = np.array(self.asymm_peaks_stack).flatten().tolist()
     
     def asymm_line(self, shifts, asymmpeak):
+        '''
+        defines an asymmetric lineshape - depends on whether initial lineshape is L or G
+        '''
+        
         alphashifts = truncate(shifts, shifts, -np.inf, asymmpeak[1])[0]
         betashifts = truncate(shifts, shifts, asymmpeak[1], np.inf)[0]
         alpha = np.true_divide(self.line(alphashifts,asymmpeak[0], asymmpeak[1], asymmpeak[2]), asymmpeak[0])**asymmpeak[3]
@@ -578,6 +619,9 @@ class fullfit:
         return np.append(alpha, beta)
     
     def asymm_multi_line(self, shifts, params): # params is flat
+        '''
+        outputs sum of many asymmetric peaks
+        '''
         fit = np.zeros(len(self.signal))
         params = np.reshape(params,(len(params)/5,5))
         for asymmpeak in params:
@@ -617,9 +661,10 @@ class fullfit:
             initial_fit=None, 
             add_peaks = True, 
             allow_asymmetry = False,
-            minwidth = 8, 
+            minwidth = 2.5, 
             maxwidth = 30, 
-            regions = 20, noise_factor = 0.01, 
+            regions = 20, 
+            noise_factor = 1, 
             min_peak_spacing = 5, 
             comparison_thresh = 0.05, 
             verbose = False):    
@@ -634,40 +679,40 @@ class fullfit:
             self.minwidth = minwidth/0.95
         
         self.min_peak_spacing = min_peak_spacing
-        self.width = 4*self.Wavelet_Estimate_Width()
-        self.regions = regions
-        if self.regions>len(self.spec):	self.regions = len(self.spec)/2 
+        self.width = 4*self.Wavelet_Estimate_Width() # a guess for the peak width
+        self.regions = regions # number of regions the spectrum will be split into to add a new peak
+        if self.regions>len(self.spec):	self.regions = len(self.spec)/2 # can't be have more regions than points in spectrum
     	
-    	self.noise_threshold = noise_factor*np.std(Grad(self.spec))
-        self.initial_bg_poly()
+    	self.noise_threshold = noise_factor*np.std(Grad(self.spec)) # peaks must be above this to be accepted
+        self.initial_bg_poly() # takes a guess at the background
         if initial_fit is not None:
             self.peaks = initial_fit
             self.regions = len(self.spec)/20.
-            if add_peaks == False: self.regions*=21
-            self.peaks_stack = self.peaks_to_matrix(self.peaks)
-            height_bound = (self.noise_threshold,max(self.signal))
+            if add_peaks == False: self.regions*=21 # if regions is bigger than the spectrum length, then no peaks are added
+            self.peaks_stack = self.peaks_to_matrix(self.peaks) # 2d array of peak parameters
+            height_bound = (self.noise_threshold,max(self.signal)) # bounds for the peak parameters
             pos_bound = (np.min(self.shifts),np.max(self.shifts))
             width_bound = (self.minwidth,self.maxwidth)
             self.peak_bounds = []
             for dump in self.peaks_stack:                          
-                self.peak_bounds+=[height_bound, pos_bound, width_bound]
-            self.optimize_heights()
+                self.peak_bounds+=[height_bound, pos_bound, width_bound] # creates a bound for each peak
+            self.optimize_heights() # see functions for descriptions
             self.optimize_centre_and_width()
             
             #self.optimize_peaks()
-         # gives initial bg_vals, and bg_indices
         
         
         
-        while self.regions <= len(self.spec):
+        while self.regions <= len(self.spec): 
+            
             if verbose == True: print 'Region fraction: ', np.around(self.regions/float(len(self.spec)), decimals = 2)
-            existing_loss_score = self.loss_function()
-            Old = self.peaks_stack
-            self.add_new_peak()
+            existing_loss_score = self.loss_function() # measure of fit 'goodness'
+            Old = self.peaks_stack # peaks before new one added
+            self.add_new_peak() # adds a peak
             if verbose == True: print '# of peaks:', len(self.peaks)/3
 #            self.optimize_heights
 #            self.optimize_centre_and_width()
-            self.optimize_peaks_and_bg()
+            self.optimize_peaks_and_bg() # optimizes 
             new_loss_score = self.loss_function()
     		
             #---Check to increase regions
@@ -678,7 +723,7 @@ class fullfit:
                     self.peak_bounds = self.peak_bounds[0:-3]
                     self.peaks_stack = self.peaks_stack[0:-1]
                     
-                self.regions*=4
+                self.regions*=4 # increase regions, as this is a sign fit is nearly finished
                 
             elif self.peak_added == False:  #Otherwise, same number of peaks?
 #                self.optimize_bg()
@@ -692,32 +737,33 @@ class fullfit:
                 for old_peak in Old:
                         new_peak = find_closest(old_peak[1], New_trnsp[1])[1]# returns index of the new peak which matches it
                         old_height = old_peak[0]
-                        old_height
                         old_pos = old_peak[1]/self.width
-                        
+
                         new_height = New[new_peak][0]/old_height
-                        new_pos = New[new_peak][1]/self.width
-                        residual.append(np.linalg.norm(np.array([1,old_pos])-np.array([new_height,new_pos])))
+                        new_pos = New[new_peak][1]/self.width # normalise the height and position parameters to add them into one comparison score
+                        
+                        residual.append(np.linalg.norm(np.array([1,old_pos])-np.array([new_height,new_pos]))) # the difference between old and new for each peak
                 comparison = residual>comparison_thresh
-                if type(comparison) == bool:
+                if type(comparison) == bool: # happens if only 1 peak
                     if comparison ==False:
                         self.regions*=5
                 else:
                     if any(comparison) == False: #if none of the peaks have changed by more than comparison_thresh fraction
                         self.regions*=5
-            elif len(self.peaks)==0:
+            elif len(self.peaks)==0: # if there wasn't a peak added, try harder
                 self.regions*=5
             
-        #---One last round of optimization for luck---#
+        #---One last round of optimization for luck: can comment these in and out as you see fit. 
 #        self.optimize_bg()
-#        self.optimize_heights()
- #       self.optimize_centre_and_width()
-#        self.optimize_peaks()
+#        
         self.optimize_peaks_and_bg()
+        self.optimize_heights()
+        self.optimize_centre_and_width()
+        self.optimize_peaks()
         if allow_asymmetry == True:
             if verbose == True: print 'asymmetrizing'
             self.optimize_asymm()
-#            for i in range(2):
+#            for i in range(2): # more iteratively optimizes the asymmetric peaks
 #                self.optimize_asymm()
 #                self.optimize_bg()
 #           
@@ -736,7 +782,7 @@ if __name__ == '__main__':
     shifts = -cnv.wavelength_to_cm(scan['Particle_6']['power_series_4'].attrs['wavelengths'], centre_wl = 785)
 #    spec, shifts = truncate(spec, shifts, -np.inf, -220)
     spec, shifts = truncate(spec, shifts, -930, -220)
-    ff = fullfit(spec, shifts, order = 11, use_exponential = True, lineshape = 'G')
+    ff = fullfit(spec, shifts, order = 11, use_exponential = False, lineshape = 'G')
     
     
     ff.Run(verbose = True, 
@@ -749,18 +795,5 @@ if __name__ == '__main__':
            allow_asymmetry = False)
 
     ff.plot_result()
-#    fg.plot_result()
-    #fg.plot_asymm_result()
-    
-#    fl = fullfit(spec, shifts, order = 9, lineshape = 'L')
-#    
-#    fl.Run(verbose = True, 
-#           comparison_thresh = 0.01, 
-#           noise_factor = 0.05, 
-#           minwidth = 2.5,
-#           maxwidth = 17,
-#           min_peak_spacing = 2.8,
-#           allow_asymmetry = False)
-#    fl.plot_result()
-#    fl.plot_asymm_result()
+
 
