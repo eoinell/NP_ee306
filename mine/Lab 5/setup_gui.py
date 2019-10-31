@@ -50,10 +50,8 @@ class Exp(QtWidgets.QWidget,UiTools):
         super(Exp,self).__init__(parent)       
         self.laser = '_785'        
         
-        
         self.initiate_all(equipment_dict)
         
-       
         uic.loadUi(r'C:\Users\00\Documents\GitHub\Lab5 programming\Gui\setup_gui.ui', self)
         #self.equipment_dict = {'Exp':self, 'spec':self.spec, 'lutter':self.lutter, 'wutter':self.wutter, 'pometer':self.pometer, 'CWL':self.CWL, 'trandor':self.trandor}         
         self.minangle = 260
@@ -83,43 +81,58 @@ class Exp(QtWidgets.QWidget,UiTools):
         self.gui = GuiGenerator(self.equipment_dict,
                                 dock_settings_path = r'C:\Users\00\Documents\ee306\ee306.npy',
                                 scripts_path=r'C:\Users\00\Documents\ee306')
-    def initiate_all(self):
-                       
-        self._initiate_spectrometer()
-        self._initiate_lutter()
-        lutter.set_mode(1)
-        self._initiate_FW()
-        self._initiate_pometer()
-        self._initiate_cam()
-        self._initiate_stage()
+    def initiate_all(self, ed):
+        self.init_spec = False
+        self.init_lutter = False
+        self.init_FW = False
+        self.init_pometer = False
+        self.init_cam = False
+        self.init_stage = False
+        self.init_CWL = False
+        self.init_wutter = False
+        self.init_trandor = False
+        self.init_aligner = False                
+        self.init_AOM = False               
+        self._initiate_spectrometer(ed['spec'])
+        self._initiate_lutter(ed['lutter'])
+        self._initiate_FW(ed['FW'])
+        self._initiate_pometer(ed['pometer'])
+        self._initiate_cam(ed['cam'])
+        self._initiate_stage(ed['stage'])
         self._initiate_CWL()
-        self._initiate_wutter()
-        self._initiate_trandor()
+        self._initiate_wutter(ed['wutter'])
+        self._initiate_trandor(ed['trandor'])
         self._initiate_aligner()
-        self._initiate_AOM()
+        self._initiate_AOM(ed['AOM'])
     
     
-    def _initiate_lutter(self):
+    def _initiate_spectrometer(self, instrument):
+        if self.init_spec is True:        
+            print 'Spectrometer already initialised'
+        else:
+            self.spec = instrument
+            self.init_spec = True
+    def _initiate_lutter(self, instrument):
         if self.init_lutter is True:
             print 'Laser shutter already initialised'
         else:
-            self.lutter = ThorLabsSC10('COM30')
+            self.lutter = instrument
             self.lutter.set_mode(1)
             self.init_lutter = True
             
-    def _initiate_FW(self):
+    def _initiate_FW(self, instrument):
         if self.init_FW is True:            
             print 'Filter Wheel already initialised'
         else:            
-            self.FW=[RS.Filter_Wheel()] 
+            self.FW = instrument
                
             self.init_FW = True
    
-    def _initiate_AOM(self):
+    def _initiate_AOM(self, instrument):
         if self.init_AOM == True:
             print 'AOM already initialised'
         else:
-            self.AOM = AOM.AOM()
+            self.AOM = instrument
             self.AOM.Switch_Mode()
             self.AOM.Power(0.95)
     def _set_to_midpoint(self):
@@ -132,29 +145,28 @@ class Exp(QtWidgets.QWidget,UiTools):
             self.rotate_to(self.minangle)
         if self.laser == '_633':
             self.AOM.Power(self.maxvolt)
-    def _initiate_pometer(self):
+    def _initiate_pometer(self, instrument):
         if self.init_pometer is True:
             print 'Power meter already initialised'
         else:            
-            inst = rm.open_resource('USB0::0x1313::0x807B::17121118::INSTR',timeout=1)
-            self.pometer = ThorlabsPM100(inst=inst)
+            self.pometer = instrument
             self.pometer.system.beeper.immediate()
             if self.laser == '_785': self.pometer.sense.correction.wavelength = 785   
             if self.laser == '_633': self.pometer.sense.correction.wavelength = 633              
             self.init_pometer = True
-    def _initiate_cam(self):
+    def _initiate_cam(self, instrument):
         if self.init_cam is True:
             print 'Camera already initalised'
         else:
-            self.cam = LumeneraCamera(1)
+            self.cam = instrument
             self.cam.exposure=800.
             self.cam.gain = 20.
             self.init_cam = True
-    def _initiate_stage(self):
+    def _initiate_stage(self, instrument):
         if self.init_stage is True:
             print 'Stage already initialised'
         else:            
-            self.stage = ProScan("COM32",hardware_version=2)
+            self.stage = instrument
             self.init_stage = True
     def _initiate_CWL(self):
         if self.init_CWL is True:
@@ -162,20 +174,19 @@ class Exp(QtWidgets.QWidget,UiTools):
         else:
             self.CWL = CameraWithLocation(self.cam, self.stage)
             self.init_CWL = True
-    def _initiate_wutter(self):    
+    def _initiate_wutter(self, instrument):    
         if self.init_wutter is True :           
             print 'White light shutter already initialised'
         else:            
-            self.wutter = Uniblitz("COM8")
+            self.wutter = instrument
             self.wutter.close_shutter()            
             self.wutter.open_shutter()
-            
             self.init_wutter = True
-    def _initiate_trandor(self):
+    def _initiate_trandor(self, instrument):
         if self.init_trandor is True:
             'Print Triax and Andor already initialised'
         else:            
-            self.trandor=Trandor()
+            self.trandor = instrument
             self.andor_gui = self.trandor.get_qt_ui()     
             self.trandor_exposure = 10          
             self.trandor_centre_wl = 785            
@@ -544,7 +555,7 @@ class Exp(QtWidgets.QWidget,UiTools):
         initial_gain = self.cam.gain
         initial_angle = self.angle        
         initial_voltage = self.AOM.Get_Power()   
-        print initial_voltage
+        
         self.cam.exposure = 0.
         self.cam.gain = 1
         self.rotate_to(self.minangle)
@@ -561,10 +572,39 @@ class Exp(QtWidgets.QWidget,UiTools):
 if __name__ == '__main__': 
     app = QtWidgets.QApplication(sys.argv)    
     rm= visa.ResourceManager()
+    
     spec = OceanOpticsSpectrometer(0) 
     lutter = ThorLabsSC10('COM30')
+    FW=[RS.Filter_Wheel()] 
     lutter.set_mode(1)
-    Exp = Exp()
-    Exp.show()
-
+    aom = AOM.AOM()
+    aom.Switch_Mode()
+    aom.Power(0.95)
+    inst = rm.open_resource('USB0::0x1313::0x807B::17121118::INSTR',timeout=1)
+    pometer = ThorlabsPM100(inst=inst)
+    cam = LumeneraCamera(1)
+    wutter = Uniblitz("COM8")
+    stage = ProScan("COM32",hardware_version=2)
+    trandor=Trandor()
+    File = datafile.current()
+    equipment_dict = {'spec' : spec,
+                      'lutter' : lutter,
+                      'FW' : FW,
+                      'AOM' : aom,
+                      'pometer' : pometer,
+                      'cam' : cam,
+                      'wutter' : wutter,
+                      'stage' : stage,
+                      'trandor' : trandor}
+    
+    grid_sers_dict = {'lutter' : lutter,
+                      'cam' : cam,
+                      'wutter' : wutter,
+                      'stage' : stage,
+                      'trandor' : trandor}
+    exp = Exp(equipment_dict)
+    
+    exp.show()
+    
+    
     
