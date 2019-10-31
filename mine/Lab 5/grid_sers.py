@@ -9,7 +9,7 @@ Grid SERS
 from scipy.interpolate import griddata
 
 
-def grid_SERS(ed, size, steps):
+def grid_SERS(ed, size, steps): # size in um
     
     lutter = ed['lutter']
     cam = ed['cam']
@@ -50,6 +50,9 @@ def grid_SERS(ed, size, steps):
     attrs['places'] = places
     group = File.create_group('Grid SERS')
     group.create_dataset('SERS', data = to_save, attrs = attrs) 
+    stage.move(initial_position)
+    lutter.close_shutter()
+    wutter.open_shutter()
     
     return np.sum(to_save, axis = 1), places    
 
@@ -70,6 +73,6 @@ def plot_grid(intensities, places):
     
     
     
-intensities, places, = grid_SERS(grid_sers_dict, 1, 5)
+intensities, places, = grid_SERS(grid_sers_dict, 0.5, 5)
 
 plot_grid(intensities, places)
