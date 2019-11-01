@@ -16,8 +16,9 @@ def grid_SERS(ed, size, steps): # size in um
     wutter = ed['wutter']
     stage = ed['stage']
     trandor = ed['trandor']
-     
-    
+    lutter.close_shutter()
+    wutter.open_shutter()
+ 
     wutter.close_shutter()
     lutter.open_shutter()
     initial_position = stage.get_position() # array

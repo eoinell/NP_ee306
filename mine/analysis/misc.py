@@ -102,7 +102,7 @@ def stokesratio(Stokes_counts, antiStokes_counts, shift, laser_wavelength = 785.
     T = scipy.constants.hbar*omega/(scipy.constants.k*np.log(logarg))
     return T        
             
-def condenseZscan(zScan, normalised = True):    
+def condenseZscan(zScan, normalised = False):    
     #
     bg = zScan.attrs['background']
     ref = zScan.attrs['reference']
@@ -110,7 +110,7 @@ def condenseZscan(zScan, normalised = True):
     for index,z in enumerate(zScan):
         refdsubdzscan[index] = np.true_divide(z-bg,ref-bg)
     output = np.array([scan.max() for scan in np.transpose(refdsubdzscan)])
-    if normalised == True: output = output/(float(max(output[len(output)/3:2*len(output)/3])))
+    if normalised == True: output /= float(max(output[len(output)/3:2*len(output)/3]))
     return output
  
 def remove_cosmic_rays_from_Raman(counts, threshold = 2):

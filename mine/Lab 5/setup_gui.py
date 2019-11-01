@@ -43,8 +43,6 @@ def laser_merit(im):
     except: merit = 0
     return merit
 
-
-
 class Exp(QtWidgets.QWidget,UiTools):
     def __init__(self, equipment_dict, parent = None):
         super(Exp,self).__init__(parent)       
@@ -87,7 +85,6 @@ class Exp(QtWidgets.QWidget,UiTools):
         self.init_FW = False
         self.init_pometer = False
         self.init_cam = False
-        self.init_stage = False
         self.init_CWL = False
         self.init_wutter = False
         self.init_trandor = False
@@ -162,17 +159,17 @@ class Exp(QtWidgets.QWidget,UiTools):
             self.cam.exposure=800.
             self.cam.gain = 20.
             self.init_cam = True
-    def _initiate_stage(self, instrument):
-        if self.init_stage is True:
-            print 'Stage already initialised'
-        else:            
-            self.stage = instrument
-            self.init_stage = True
-    def _initiate_CWL(self):
+            
+    
+    def _initiate_CWL(self, instrument):
         if self.init_CWL is True:
             print 'Camera with location already initialised'
         else:
-            self.CWL = CameraWithLocation(self.cam, self.stage)
+            self.CWL = instrument
+            
+            self.cam = instrument
+            self.cam.exposure=800.
+            self.cam.gain = 20.
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
         if self.init_wutter is True :           
@@ -551,21 +548,23 @@ class Exp(QtWidgets.QWidget,UiTools):
         self.wizard.show()
     
     def focus_with_laser(self):
-        initial_exp = self.cam.exposure
-        initial_gain = self.cam.gain
+        initial_exp = self.CWL.camera.exposure
+        initial_gain = self.CWL.camera.gain
         initial_angle = self.angle        
         initial_voltage = self.AOM.Get_Power()   
         
-        self.cam.exposure = 0.
-        self.cam.gain = 1
-        self.rotate_to(self.minangle)
+        self.CWL.camera.exposure = 0.
+        self.CWL.camera.gain = 1
+        if self.laser == 785: self.rotate_to(self.minangle)
+        if self.laser == 633: self.AOM.Power(1)
         self.wutter.close_shutter()
         self.lutter.open_shutter()
         time.sleep(1)
         self.CWL.autofocus(merit_function = laser_merit)
-        self.cam.exposure = initial_exp
-        self.cam.gain = initial_gain 
-        self.rotate_to(initial_angle)
+        self.CWL.camera.exposure = initial_exp
+        self.CWL.camera.gain = initial_gain 
+        if self.laser == 785: self.rotate_to(initial_angle)
+        if self.laser == 633: self.AOM.Power(initial_voltage)
     def get_qt_ui(self):
         return self
 
@@ -582,9 +581,11 @@ if __name__ == '__main__':
     aom.Power(0.95)
     inst = rm.open_resource('USB0::0x1313::0x807B::17121118::INSTR',timeout=1)
     pometer = ThorlabsPM100(inst=inst)
-    cam = LumeneraCamera(1)
     wutter = Uniblitz("COM8")
+    cam = LumeneraCamera(1)
+    
     stage = ProScan("COM32",hardware_version=2)
+    CWL = CameraWithLocation(cam, stage)
     trandor=Trandor()
     File = datafile.current()
     equipment_dict = {'spec' : spec,
@@ -592,13 +593,12 @@ if __name__ == '__main__':
                       'FW' : FW,
                       'AOM' : aom,
                       'pometer' : pometer,
-                      'cam' : cam,
                       'wutter' : wutter,
-                      'stage' : stage,
+                      'CWL' : CWL,
                       'trandor' : trandor}
     
     grid_sers_dict = {'lutter' : lutter,
-                      'cam' : cam,
+                      'CWL' : CWL,
                       'wutter' : wutter,
                       'stage' : stage,
                       'trandor' : trandor}
