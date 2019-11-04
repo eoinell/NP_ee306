@@ -78,7 +78,7 @@ class Exp(QtWidgets.QWidget,UiTools):
         self.equipment_dict = {'Exp':self, 'spec':self.spec, 'cam':self.cam, 'CWL':self.CWL, 'trandor':self.trandor}        
         self.gui = GuiGenerator(self.equipment_dict,
                                 dock_settings_path = r'C:\Users\00\Documents\ee306\ee306.npy',
-                                scripts_path=r'C:\Users\00\Documents\ee306')
+                                scripts_path=r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5')
     def initiate_all(self, ed):
         self.init_spec = False
         self.init_lutter = False
@@ -94,9 +94,8 @@ class Exp(QtWidgets.QWidget,UiTools):
         self._initiate_lutter(ed['lutter'])
         self._initiate_FW(ed['FW'])
         self._initiate_pometer(ed['pometer'])
-        self._initiate_cam(ed['cam'])
-        self._initiate_stage(ed['stage'])
-        self._initiate_CWL()
+        self._initiate_cam(ed['cam'])        
+        self._initiate_CWL(ed['CWL'])
         self._initiate_wutter(ed['wutter'])
         self._initiate_trandor(ed['trandor'])
         self._initiate_aligner()
@@ -166,10 +165,6 @@ class Exp(QtWidgets.QWidget,UiTools):
             print 'Camera with location already initialised'
         else:
             self.CWL = instrument
-            
-            self.cam = instrument
-            self.cam.exposure=800.
-            self.cam.gain = 20.
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
         if self.init_wutter is True :           
@@ -185,7 +180,7 @@ class Exp(QtWidgets.QWidget,UiTools):
         else:            
             self.trandor = instrument
             self.andor_gui = self.trandor.get_qt_ui()     
-            self.trandor_exposure = 10          
+            self.trandor_exposure = 1        
             self.trandor_centre_wl = 785            
             self.trandor.HSSpeed=2
             self.trandor.Grating(1)
@@ -204,7 +199,7 @@ class Exp(QtWidgets.QWidget,UiTools):
             'Spectrometer aligner already initiated'
         else:
             
-            self.aligner = SpectrometerAligner(self.spec, self.stage)
+            self.aligner = SpectrometerAligner(self.spec, self.CWL.stage)
             self.init_aligner = True
     
     def SetupSignals(self):
@@ -569,6 +564,8 @@ class Exp(QtWidgets.QWidget,UiTools):
         return self
 
 if __name__ == '__main__': 
+    import os
+    os.chdir(r'C:\Users\00\Documents\ee306')    
     app = QtWidgets.QApplication(sys.argv)    
     rm= visa.ResourceManager()
     
@@ -594,17 +591,14 @@ if __name__ == '__main__':
                       'AOM' : aom,
                       'pometer' : pometer,
                       'wutter' : wutter,
+                      'cam' : cam,
                       'CWL' : CWL,
                       'trandor' : trandor}
     
-    grid_sers_dict = {'lutter' : lutter,
-                      'CWL' : CWL,
-                      'wutter' : wutter,
-                      'stage' : stage,
-                      'trandor' : trandor}
+   
     exp = Exp(equipment_dict)
     
     exp.show()
-    
-    
+        
+        
     
