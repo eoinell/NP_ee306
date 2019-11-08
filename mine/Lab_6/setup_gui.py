@@ -138,7 +138,7 @@ class Lab:
             self.init_aligner = True
     def example(self):
         print "I'm an example"
-        winsound.Beep(1000,500)
+        winsound.Beep(100,500)
     def get_qt_ui(self):
         return Lab_gui(self)
 
