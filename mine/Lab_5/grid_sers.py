@@ -10,28 +10,34 @@ from scipy.interpolate import griddata
 import time
 from nplab import datafile
 
-def grid_SERS(ed, size, steps): # size in um
-    
+def grid_SERS(ed, group, step_size, steps): # size in um
+        
     lutter = ed['lutter']
     CWL = ed['CWL']
     stage = CWL.stage
     wutter = ed['wutter']
-
+    aligner = ed['aligner']
     trandor = ed['trandor']
+    trandor.triax.Slit(300)
     lutter.close_shutter()
     wutter.open_shutter()
- 
+    time.sleep(2)
+    group.create_dataset('image_before',data = CWL.thumb_image()) 
+    data = aligner.z_scan(dz =np.arange(-0.25,0.25,0.05))    
+    group.create_dataset('z_scan', data = data)
+    exp.focus_with_laser()    
     wutter.close_shutter()
     lutter.open_shutter()
-    initial_position = stage.get_position() # array
-    z = 0
-    xs = np.linspace(-size/2., size/2., num = steps)
-    ys = xs
-#    xs += initial_position[0]
-#    ys += initial_position[1]
+    initial_position = stage.get_position() # array   
+    z = initial_position[2]
+    xs = np.linspace(0,(steps)*step_size, num = steps, endpoint = True) - (steps)*step_size/2
+    ys = np.linspace(0,(steps)*step_size, num = steps, endpoint = True) - (steps)*step_size/2
+    xs += initial_position[0]
+    print xs
+    ys += initial_position[1]
     counter = -1
     places = []
-    
+#    
     for y in ys:
         counter+=1
         if counter%2 ==0:
@@ -41,22 +47,23 @@ def grid_SERS(ed, size, steps): # size in um
             for x in xs[::-1]:
                 places.append([x,y,z])
     
-    places = np.array(places)
-#    plt.figure()
-#    plt.plot(places[:,[0,1]])
+
+#    
+    places = np.asarray(places) 
+
     captures = []            
+    trandor.capture()    
     for place in places:
-        stage.move_rel(place)
-                
+        stage.move(place)
+#        print place
+        print place-initial_position       
         time.sleep(0.5)
         captures.append(trandor.capture()[0])
     
     
-    File = datafile.current()
     
     attrs = trandor.metadata
     attrs['places'] = places
-    group = File.create_group('Grid SERS')
     group.create_dataset('SERS', data = captures, attrs = attrs) 
     stage.move(initial_position)
     lutter.close_shutter()
@@ -71,7 +78,7 @@ def plot_grid(intensities, places):
     #xys = np.take(places, [0,1], axis = 2)
     #xys.reshape(xys.size/2, 2)
   
-    x = places[0,:,0] # an ex axis
+    x = places[0,:,0] # an x axis
     y = places[:,0,1] # a y axis
  
     xx, yy = np.meshgrid(x, y) #x and y coordinates to be evalueated at
@@ -91,11 +98,17 @@ def plot_grid(intensities, places):
     plt.plot(intensities)
     
     
-grid_sers_dict = {'lutter' : Exp.lutter,
-                  'CWL' : Exp.CWL,
-                  'wutter' : Exp.wutter,
-                  'trandor' : Exp.trandor}    
+grid_sers_dict = {'lutter' : exp.lutter,
+                  'CWL' : exp.CWL,
+                  'wutter' : exp.wutter,
+                  'trandor' : exp.trandor,
+                  'focus_with_laser' : exp.focus_with_laser,
+                  'aligner' : exp.aligner}    
 
-intensities, places, = grid_SERS(grid_sers_dict, 0.5, 2)
+File = datafile.current()
+grid_sers_group = File.create_group('Grid_SERS_BPT_%d')
+#exp.Power(0.3)
+
+intensities, places, = grid_SERS(grid_sers_dict, grid_sers_group, 0.1, 11)
 
 plot_grid(intensities, places)

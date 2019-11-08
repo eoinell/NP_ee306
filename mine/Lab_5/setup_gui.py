@@ -43,9 +43,9 @@ def laser_merit(im):
     except: merit = 0
     return merit
 
-class Exp(QtWidgets.QWidget,UiTools):
+class Experiment(QtWidgets.QWidget,UiTools):
     def __init__(self, equipment_dict, parent = None):
-        super(Exp,self).__init__(parent)       
+        super(Experiment,self).__init__(parent)       
         self.laser = '_785'        
         
         self.initiate_all(equipment_dict)
@@ -58,6 +58,7 @@ class Exp(QtWidgets.QWidget,UiTools):
         self.File = datafile.current()
   
         #self.anglez = np.linspace(self.minangle , self.maxangle, num = 50, endpoint = True)
+                
         self.anglez = np.logspace(0,np.log10(self.maxangle-self.minangle),50)+self.minangle
         self.midangle = (self.maxangle - self.minangle)/2
         self.rotate_to(self.midangle)
@@ -75,10 +76,12 @@ class Exp(QtWidgets.QWidget,UiTools):
         self.update_power_calibration()
         self.lutter.close_shutter()
         self.wutter.open_shutter()        
-        self.equipment_dict = {'Exp':self, 'spec':self.spec, 'cam':self.cam, 'CWL':self.CWL, 'trandor':self.trandor}        
+        self.equipment_dict = {'exp':self, 'spec':self.spec, 'cam':self.cam, 'CWL':self.CWL, 'trandor':self.trandor}        
         self.gui = GuiGenerator(self.equipment_dict,
-                                dock_settings_path = r'C:\Users\00\Documents\ee306\ee306.npy',
-                                scripts_path=r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5')
+                                dock_settings_path = r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5\ee306.npy',
+                                scripts_path= r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5')
+                                
+    
     def initiate_all(self, ed):
         self.init_spec = False
         self.init_lutter = False
@@ -165,6 +168,7 @@ class Exp(QtWidgets.QWidget,UiTools):
             print 'Camera with location already initialised'
         else:
             self.CWL = instrument
+            self.CWL.load_calibration()
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
         if self.init_wutter is True :           
@@ -212,13 +216,14 @@ class Exp(QtWidgets.QWidget,UiTools):
         self.doubleSpinBox_trandor_centre_wl.valueChanged.connect(self.update_trandor_centre_wl)        
         self.pushButton_set_trandor_centre_wl.clicked.connect(self.set_trandor_centre_wl)        
         self.doubleSpinBox_exposure.valueChanged.connect(self.update_exposure)
+        self.pushButton_set_slit.clicked.connect(self.set_slit)        
         self.spinBox_steps.valueChanged.connect(self.update_steps)
         self.spinBox_max_nkin.valueChanged.connect(self.update_nkin)
         self.checkBox_ramp.stateChanged.connect(self.update_ramp)
-        self.doubleSpinBox_minpower.valueChanged.connect(self.update_minpower)
-        self.doubleSpinBox_minpower.valueChanged.connect(self.update_maxpower)          
         self.pushButton_Power_Series.clicked.connect(self._Power_Series)
-        
+        self.doubleSpinBox_min_param.valueChanged.connect(self.update_min_max_params)
+        self.doubleSpinBox_max_param.valueChanged.connect(self.update_min_max_params)
+        self.pushButton_set_param.clicked.connect(self.set_param)
         self.pushButton_lutter.clicked.connect(self.lutter.toggle)
         self.pushButton_wutter.clicked.connect(self.wutter.toggle)
         self.lineEdit_Power_Series_Name.textChanged.connect(self.update_power_series_name)
@@ -339,9 +344,11 @@ class Exp(QtWidgets.QWidget,UiTools):
                 self.power_calibration = self.File['Power_Calibration_785_'+str(max(power_group))]
             except:
                 print 'Power calibration not found'
-    def Power(power_frac, self):
-        maxpower = max(np.array(self.power_calibration['real_powers']))
-        self.rotate_to(self.Power_to_Angle(power_frac*maxpower))
+    def Power(self, power):
+        if self.laser == '_785':
+            self.rotate_to(self.Power_to_Angle(power))
+        if self.laser == '_633':
+            self.AOM.Power(self.Power_to_Voltage(power))
         
     def update_exposure(self):
         self.trandor_exposure = self.doubleSpinBox_exposure.value()
@@ -352,20 +359,42 @@ class Exp(QtWidgets.QWidget,UiTools):
     def set_trandor_centre_wl(self):
         self.trandor.Set_Center_Wavelength(self.trandor_centre_wl)
     
+    def set_slit(self):
+        self.trandor.triax.Slit(self.doubleSpinBox_slit.value())
     def update_steps(self):
         self.steps = self.spinBox_steps.value()
     def update_nkin(self):
         self.max_nkin = self.spinBox_max_nkin.value()
     def update_ramp(self):
         self.ramp = self.checkBox_ramp.isChecked()
-    def update_minpower(self):
-        self.minpower = self.doubleSpinBox_minpower.value()
-    def update_maxpower(self):
-        self.maxpower = self.doubleSpinBox_maxpower.value()
+    
     def update_measured_power(self):
         self.measured_power = self.doubleSpinBox_measured_power.value()
+    def update_min_max_params(self):
+        if self.laser == '_785':
+            self.minangle = self.doubleSpinBox_min_param.value()
+            self.maxangle = self.doubleSpinBox_max_param.value()
+            self.anglez = np.logspace(0,np.log10(self.maxangle-self.minangle),50)+self.minangle
+            self.midangle = (self.maxangle - self.minangle)/2
+        if self.laser == '_633':
+            self.minvolt = self.doubleSpinBox_min_param.value()
+            self.maxvolt = self.doubleSpinBox_max_param.value() 
+            if self.maxvolt>1:
+                print 'voltages over 1 not allowed!'
+                self.maxvolt = 1
+            self.voltagez = np.linspace(0,self.maxvolt,num = 40, endpoint = True)        
+            self.midvolt = self.voltagez[len(self.voltagez)/2]
+    def set_param(self):
+        param = self.doubleSpinBox_set_input_param.value()
+        if self.laser == '_785':
+            self.rotate_to(param)
+        elif self.laser == '_633':
+            if param>1:
+                print 'voltages >1 not allowed!'
+                param = 1
+            self.AOM.Power(param)
+            
     def Power_to_Angle(self, power):
-        """Helppppp """
         angles = self.power_calibration.attrs['Angles']    
         real_powers = np.array(self.power_calibration['real_powers'])
         curve = interpolate.interp1d(real_powers, angles, kind = 'cubic') #  
@@ -583,6 +612,7 @@ if __name__ == '__main__':
     
     stage = ProScan("COM32",hardware_version=2)
     CWL = CameraWithLocation(cam, stage)
+    
     trandor=Trandor()
     File = datafile.current()
     equipment_dict = {'spec' : spec,
@@ -596,9 +626,9 @@ if __name__ == '__main__':
                       'trandor' : trandor}
     
    
-    exp = Exp(equipment_dict)
+    experiment = Experiment(equipment_dict)
     
-    exp.show()
+    experiment.show()
         
         
     
