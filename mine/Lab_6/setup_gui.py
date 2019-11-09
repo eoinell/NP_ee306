@@ -5,30 +5,27 @@ Created on Thu Aug 01 16:38:56 2019
 @author: Hera
 """
 import sys
-
 import numpy as np
-from scipy import interpolate 
 import time
 from qtpy import QtWidgets, uic
 from nplab.utils.gui_generator import GuiGenerator
 from nplab.ui.ui_tools import UiTools
 from nplab.experiment.gui import run_function_modally
 from nplab.instrument import Instrument
-from scipy.interpolate import UnivariateSpline
 import winsound
 
-class Lab:
+class Lab(Instrument):
     '''
-    meta-instrument for all the equipment in Lab 6. Works analogously to CWL in many respects. 
+    meta-instrument for all the equipment in Lab 6. Works analogously to CWL in many respects.
+    Takes care of data handling, use the create_dataset, create_group functions. 
+    Keeps track of all their states. Functions which will be called by buttons should be put in here
     '''
     def __init__(self, equipment_dict, parent = None):     
-        self.laser = '_785' 
         self.initiate_all(equipment_dict)
-        #self.equipment_dict = {'Exp':self, 'spec':self.spec, 'lutter':self.lutter, 'wutter':self.wutter, 'pometer':self.pometer, 'CWL':self.CWL, 'shamdor':self.shamdor}         
-                        
-        #self.anglez = np.linspace(self.minangle , self.maxangle, num = 50, endpoint = True)
         self.lutter.close_shutter()
-        self.wutter.open_shutter()         
+        self.wutter.open_shutter()  
+        self.steps = 5   
+        Instrument.__init__(self)    
 
     def initiate_all(self, ed):
         self.init_spec = False
@@ -96,12 +93,12 @@ class Lab:
             self.shamrock.HSSpeed=2
             self.shamrock.SetSlit(100)
 
-#            self.shamdor.CoolerON()
+#          
             self.shamrock.center_wavelength = 700
 #            self.shamrock.ShamrockSetPixelWidth(16)
 #            self.shamrock.ShamrockSetNumberPixels(1600)
         
-            #set the centre wavelengths up
+         
 #            self.shamrock.ShamrockGetWavelengthLimits()
 #           
             self.init_shamrock = True
@@ -139,6 +136,20 @@ class Lab:
     def example(self):
         print "I'm an example"
         winsound.Beep(100,500)
+        self.create_data_group('example_group')
+        group.create_dataset('example', data = [0,1,2,3])
+    def modal_example(self, steps = None, update_progress = lambda p:p)
+        '''
+        update_progress is a function that simply returns its argument.
+        run_function_modally uses this to tell how far along the function is.
+        '''
+        if steps == None: steps = self.steps
+        else: steps = 5
+        frequencies = np.linspace(100, 1000, num = steps)
+        for counter, frequency in enumerate(frequencies):
+            winsound.Beep(frequency, 500)
+            update_progress(counter)
+
     def get_qt_ui(self):
         return Lab_gui(self)
 
@@ -150,13 +161,21 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.SetupSignals()
     def SetupSignals(self): 
         self.example_pushButton.clicked.connect(self.Lab.example)
-       
-        
+        self.modal_example.clicked.connect(self.modal_example_gui)
+        self.steps_spinBox.valueChanged.connect(self.update_steps)
+    def modal_example_gui(self):
+        '''
+        running a function modally produces a progress bar, and takes care of threading stuff for you to keep the GUI responsive
+        see nplab for details.
+        '''
+        run_function_modally(progress_maximum = self.lab.steps+1)
+    def update_steps(self):
+        self.Lab.steps = self.steps_spinBox.value()
+
   
   
 if __name__ == '__main__': 
     import os
-    import visa
     from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
     from nplab.instrument.camera.lumenera import LumeneraCamera
     from nplab.instrument.camera.camera_with_location import CameraWithLocation
@@ -169,20 +188,14 @@ if __name__ == '__main__':
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from particle_tracking_app.particle_tracking_wizard import TrackingWizard
 
-    os.chdir(r'C:\Users\np-albali\Documents')    
-    app = QtWidgets.QApplication(sys.argv)    
-    rm= visa.ResourceManager()
-    
+    os.chdir(r'C:\Users\np-albali\Documents')       
     spec = OceanOpticsSpectrometer(0) 
     lutter = ThorLabsSC10('COM1')
     lutter.set_mode(1)
-
     wutter = Uniblitz("COM7")
     cam = LumeneraCamera(1)
-    
     stage = ProScan("COM9")
     CWL = CameraWithLocation(cam, stage)
-    
     shamrock = Shamrock()
     andor = Andor()
     

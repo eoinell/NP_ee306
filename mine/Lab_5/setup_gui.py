@@ -2,7 +2,7 @@
 """
 Created on Thu Aug 01 16:38:56 2019
 
-@author: Hera
+@author: ee306
 """
 import sys
 
@@ -16,6 +16,7 @@ from nplab.utils.gui_generator import GuiGenerator
 from nplab.ui.ui_tools import UiTools
 from scipy.interpolate import UnivariateSpline
 from nplab.experiment.gui import run_function_modally
+from nplab.experiment import Experiment 
  
 def laser_merit(im):
     merit = 1
@@ -28,13 +29,12 @@ def laser_merit(im):
     try: merit = 1/(max(roots)-min(roots))
     except: merit = 0
     return merit
-class Lab(instrument):
+class Lab(Instrument):
     '''
     meta-instrument for all the equipment in Lab 5. Works analogously to CWL in many respects. 
     '''
-
     def __init__(self, equipment_dict, parent = None):
-        super(Experiment,self).__init__(parent)       
+        super(Lab, self).__init__(parent)       
         self.laser = '_785' 
         self.initiate_all(equipment_dict)
         #self.equipment_dict = {'Exp':self, 'spec':self.spec, 'lutter':self.lutter, 'wutter':self.wutter, 'pometer':self.pometer, 'CWL':self.CWL, 'trandor':self.trandor}         
@@ -503,8 +503,6 @@ class Lab_gui(QtWidgets.QWidget,UiTools)
         run_function_modally(self.Lab.Calibrate_Power, progress_maximum = len(self.Lab.anglez) if self.Lab.laser == '785' elif self.Lab.laser == '_633' len(self.Lab.anglez))
     def Power_Series_gui(self):
         run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.ramp == True else self.Lab.steps*2)
-    
-
 if __name__ == '__main__': 
     import os
     import visa

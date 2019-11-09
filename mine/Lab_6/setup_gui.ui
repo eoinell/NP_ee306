@@ -16,14 +16,40 @@
   <widget class="QPushButton" name="example_pushButton">
    <property name="geometry">
     <rect>
-     <x>12</x>
-     <y>40</y>
+     <x>10</x>
+     <y>10</y>
      <width>121</width>
      <height>28</height>
     </rect>
    </property>
    <property name="text">
     <string>Example Button</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="modal_example_pushButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>50</y>
+     <width>71</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Modal button</string>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="steps_spinBox">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>50</y>
+     <width>42</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="value">
+    <number>5</number>
    </property>
   </widget>
  </widget>
