@@ -19,6 +19,7 @@ class Lab(Instrument):
     meta-instrument for all the equipment in Lab 6. Works analogously to CWL in many respects.
     Takes care of data handling, use the create_dataset, create_group functions. 
     Keeps track of all their states. Functions which will be called by buttons should be put in here
+    Each instrument should have its own gui though!
     '''
     def __init__(self, equipment_dict, parent = None):     
         self.initiate_all(equipment_dict)
@@ -133,12 +134,30 @@ class Lab(Instrument):
             
             self.aligner = SpectrometerAligner(self.spec, self.CWL.stage)
             self.init_aligner = True
+    def fancy_capture(self):
+        '''
+        Takes a spectrum on the Andor, but turns off the white light and turns on the laser first, 
+        then restores the instrument to its initial state
+        '''
+        wutter_open = self.wutter.is_open()
+        lutter_closed = self.lutter.is_closed()
+        if wutter_open: self.wutter.close_shutter()
+        if lutter_closed: self.lutter.close_shutter()
+        
+        time.sleep(0.1)
+        self.andor.capture()
+
+        if wutter_open: self.wutter.open_shutter()
+        if lutter_closed: self.wutter.close_shutter()
+
+
+    
     def example(self):
         print "I'm an example"
         winsound.Beep(100,500)
         self.create_data_group('example_group')
         group.create_dataset('example', data = [0,1,2,3])
-    def modal_example(self, steps = None, update_progress = lambda p:p)
+    def modal_example(self, steps = None, update_progress = lambda p:p):
         '''
         update_progress is a function that simply returns its argument.
         run_function_modally uses this to tell how far along the function is.
@@ -160,6 +179,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.Lab = lab 
         self.SetupSignals()
     def SetupSignals(self): 
+        self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
         self.example_pushButton.clicked.connect(self.Lab.example)
         self.modal_example.clicked.connect(self.modal_example_gui)
         self.steps_spinBox.valueChanged.connect(self.update_steps)
