@@ -9,7 +9,6 @@ import sys
 import numpy as np
 from scipy import interpolate 
 import time
-import Rotation_Stage as RS
 from qtpy import QtWidgets, uic
 import matplotlib.pyplot as plt
 from nplab.utils.gui_generator import GuiGenerator
@@ -514,6 +513,7 @@ if __name__ == '__main__':
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
     from nplab import datafile
     from ThorlabsPM100.ThorlabsPM100 import ThorlabsPM100
+    import Rotation_Stage as RS
     import AOM
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.spectrometer.Triax.Trandor_Lab5 import Trandor
