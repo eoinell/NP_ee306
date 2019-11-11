@@ -166,7 +166,7 @@ class Lab(Instrument):
         '''
         if steps == None: steps = self.steps
         else: steps = 5
-        frequencies = np.linspace(100, 1000, num = steps)
+        frequencies = np.linspace(100, 500, num = steps)
         for counter, frequency in enumerate(frequencies):
             winsound.Beep(int(frequency), 500)
             update_progress(counter)
