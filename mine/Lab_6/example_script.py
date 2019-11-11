@@ -18,6 +18,7 @@ Just save the script, and run again.
 print desc
 import time
 import winsound
+from nplab import datafile
 
 lab.example()
 
@@ -51,3 +52,7 @@ equipment_dictionary = {'lutter' : laser_shutter,
                         'aligner' : lab.aligner}    
 
 example_script_function(equipment_dictionary)
+
+File = datafile._current_datafile
+lab.create_data_group('another example')
+print desc
