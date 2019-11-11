@@ -119,7 +119,7 @@ class Lab(Instrument):
 #            self.shamdor.ShamrockSetPixelWidth(16)
 #            self.shamdor.ShamrockSetNumberPixels(1600)
         
-            #set the centre wavelengths up
+##            set the centre wavelengths up
 #            self.shamdor.ShamrockGetWavelengthLimits()
 #            self.spinbox_centrewl.setRange(self.shamdor.shamrock.wl_limits[0],
 #                                           self.shamdor.shamrock.wl_limits[1])
@@ -235,16 +235,16 @@ if __name__ == '__main__':
                  
     File = datafile.current()
     lab = Lab(equipment_dict)
-    gui_equipment_dict = {'spectrometer' : spec,
+    gui_equipment_dict = {'Lab' : lab,
+                          'spectrometer' : spec,
                           'laser_shutter' : lutter,
                           'white_shutter' : wutter,
-                          'camera' : cam,
+                          'Camera' : cam,
                           'CWL' : CWL,
                           'shamrock' : shamrock,
-                          'andor' : andor,
-                          'Lab' : lab}
+                          'Andor' : andor}
     
-    gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6config.npy',
+    gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
                        scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
     gui.show()
         
