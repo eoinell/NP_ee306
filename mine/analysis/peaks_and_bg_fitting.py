@@ -434,7 +434,7 @@ class fullfit:
         '''
         optimizes the height, centres and widths of all peaks
         '''
-
+        if len(self.peaks)<1: return
         self.peaks = minimize(self.peak_loss, self.peaks, bounds = self.peak_bounds).x
         self.peaks_stack = self.peaks_to_matrix(self.peaks)
 
@@ -444,6 +444,7 @@ class fullfit:
         '''
         optimizes the centres(positions) and widths of the peakss for a given heights.
         '''
+        if len(self.peaks)<1: return
         heights = np.transpose(self.peaks_stack)[0]
         centres_and_widths_stack = np.transpose(self.peaks_stack)[1:]
         centres_and_widths = np.ravel(centres_and_widths_stack)

@@ -149,7 +149,7 @@ def fit(particle, input_shifts, analysis_range, T_misc = None, T_misc_shifts = N
             plt.fill_between(S_shifts, S_bg, 0,color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
             plt.fill_between(AS_shifts, AS_bg, 0,color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
             allpeaks = np.append(Sfit.peaks_stack, ASfit.peaks_stack, axis = 0)
-            plt.plot(shifts, full_bg+ Sfit._multi_L(shifts, *allpeaks)*normfac, '--', color = 'k', alpha = 0.5, zorder = 1)
+            plt.plot(shifts, full_bg+ Sfit._multi_(shifts, *allpeaks)*normfac, '--', color = 'k', alpha = 0.5, zorder = 1)
             maxes.append(max(raw_counts))
             if counter == len(places)-1: 
                 plt.fill_between([-notch, notch], 0, 1000000, color = 'w', alpha = 1, zorder = 2, linestyle = 'None')
