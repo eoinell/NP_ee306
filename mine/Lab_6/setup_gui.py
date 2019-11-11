@@ -198,7 +198,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def update_steps(self):
         self.Lab.steps = self.steps_spinBox.value()
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     import os
     from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
     from nplab.instrument.camera.lumenera import LumeneraCamera
@@ -244,9 +244,8 @@ if __name__ == '__main__':
                           'andor' : andor,
                           'Lab' : lab}
     
-    gui = GuiGenerator(gui_equipment_dict, scripts_path= r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6',
-                       dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy')
-                                                 
+    gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6config.npy',
+                       scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
     gui.show()
         
         
