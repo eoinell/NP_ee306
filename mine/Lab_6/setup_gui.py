@@ -197,9 +197,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         run_function_modally(self.Lab.modal_example, progress_maximum = self.Lab.steps+1)
     def update_steps(self):
         self.Lab.steps = self.steps_spinBox.value()
-        
-  
-  
+
 if __name__ == '__main__': 
     import os
     from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
@@ -237,8 +235,16 @@ if __name__ == '__main__':
                  
     File = datafile.current()
     lab = Lab(equipment_dict)
-    equipment_dict['lab'] = lab    
-    gui = GuiGenerator(equipment_dict, scripts_path= r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6',
+    gui_equipment_dict = {'spectrometer' : spec,
+                          'laser_shutter' : lutter,
+                          'white_shutter' : wutter,
+                          'camera' : cam,
+                          'CWL' : CWL,
+                          'shamrock' : shamrock,
+                          'andor' : andor,
+                          'Lab' : lab}
+    
+    gui = GuiGenerator(gui_equipment_dict, scripts_path= r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6',
                        dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy')
                                                  
     gui.show()
