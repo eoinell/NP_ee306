@@ -11,7 +11,7 @@ Example script for Github demonstration
 def example():
     
     print "I'm the definitive version"
-    
+    print "I'm an experimental feature"
 
 if __name__ == '__main__':
     example()
