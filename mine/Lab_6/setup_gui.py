@@ -12,6 +12,7 @@ from nplab.utils.gui_generator import GuiGenerator
 from nplab.ui.ui_tools import UiTools
 from nplab.experiment.gui import run_function_modally
 from nplab.instrument import Instrument
+from nplab import datafile
 import winsound
 
 class Lab(Instrument):
@@ -95,6 +96,11 @@ class Lab(Instrument):
             self.shamrock.HSSpeed=2
             self.shamrock.SetSlit(100)
             self.shamrock.center_wavelength = 700
+            self.shamrock.pixel_number = 1600
+            self.shamrock.pixel_width = 16
+            def get_xaxis(self):self.shamrock.GetCalibration()
+            
+            
 #            self.shamrock.ShamrockSetPixelWidth(16)
 #            self.shamrock.ShamrockSetNumberPixels(1600)
 #            self.shamrock.ShamrockGetWavelengthLimits()
@@ -109,14 +115,15 @@ class Lab(Instrument):
             self.andor.HSSpeed=2
           
             self.andor.SetTemperature = -90
-#            self.shamdor.CoolerON()
+            self.andor.CoolerON()
             self.andor.Exposure= 1
 
             self.andor.ReadMode=3
             self.andor.SingleTrack = (100, 30)
             self.andor.AcquisitionMode=3
-#            self.shamdor.ShamrockSetPixelWidth(16)
-#            self.shamdor.ShamrockSetNumberPixels(1600)
+            self.andor.x_axis = property(self.shamrock.GetCalibration())
+            
+#           
         
 ##            set the centre wavelengths up
 #            self.shamdor.ShamrockGetWavelengthLimits()
@@ -186,8 +193,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.set_power_pushButton.clicked.connect(self.set_power_gui)        
         self.group_name_lineEdit.valueChanged.connect(self.update_group_name)
         self.create_group_pushButton.clicked.connect(self.create_data_group_gui)
-        self.save_OO_pushButton.clicked.connect(self.save_OO)
-        self.save_andor_pushButton.clicked.connect(self.save_andor)
+        self.use_created_group_checkBox.staeChanged.connect(self.update_use_current_group)
         
         self.example_pushButton.clicked.connect(self.Lab.example)
         self.modal_example_pushButton.clicked.connect(self.modal_example_gui)
@@ -198,15 +204,12 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.group_name = self.group_name_lineEdit.text() 
     def create_data_group_gui(self):
         datafile._current_group = self.Lab.create_data_group(self.group_name)
-    
-    def save_OO(self):
-
-    def saveandor(self):
-        if self._current_group == None:
-            print 'No user created groups!'
+    def update_use_current_group(self):
+        if self.use_created_group_checkBox.checkState:
+            datafile._use_current_group = True  
         else:
-            self._current_group.create_dataset(self.Lab.andor.CurImage)
-    
+            datafile._use_current_group = False  
+
     
     def modal_example_gui(self):
         '''
@@ -227,7 +230,6 @@ if __name__ == '__main__':
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
     from nplab.instrument.spectrometer.shamrock import Shamrock
     from nplab.instrument.camera.Andor import Andor
-    from nplab import datafile
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.stage.Thorlabs_FW212C import FW212C   
     from particle_tracking_app.particle_tracking_wizard import TrackingWizard
