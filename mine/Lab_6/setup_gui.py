@@ -25,7 +25,7 @@ class Lab(Instrument):
         self.initiate_all(equipment_dict)
         self.lutter.close_shutter()
         self.wutter.open_shutter()  
-        self.steps = 5   
+        self.steps = 5 
         Instrument.__init__(self)    
 
     def initiate_all(self, ed):
@@ -62,7 +62,6 @@ class Lab(Instrument):
             self.lutter = instrument
             self.lutter.set_mode(1)
             self.init_lutter = True        
- 
 
     def _initiate_cam(self, instrument):
         if self.init_cam is True:
@@ -178,17 +177,37 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def __init__(self, lab):
         super(Lab_gui, self).__init__()
         uic.loadUi(r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\setup_gui.ui', self)
-        self.Lab = lab 
+        self.Lab = lab
+        self.group_name = 'particle_%d' 
+        self._current_group = None
         self.SetupSignals()
     def SetupSignals(self): 
         self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
         self.set_power_pushButton.clicked.connect(self.set_power_gui)        
+        self.group_name_lineEdit.valueChanged.connect(self.update_group_name)
+        self.create_group_pushButton.clicked.connect(self.create_data_group_gui)
+        self.save_OO_pushButton.clicked.connect(self.save_OO)
+        self.save_andor_pushButton.clicked.connect(self.save_andor)
+        
         self.example_pushButton.clicked.connect(self.Lab.example)
         self.modal_example_pushButton.clicked.connect(self.modal_example_gui)
         self.steps_spinBox.valueChanged.connect(self.update_steps)
-    
     def set_power_gui(self):
         self.Lab.power_wheel.setPosition(self.power_wheel_spinBox.value())
+    def update_group_name(self):
+        self.group_name = self.group_name_lineEdit.text() 
+    def create_data_group_gui(self):
+        datafile._current_group = self.Lab.create_data_group(self.group_name)
+    
+    def save_OO(self):
+
+    def saveandor(self):
+        if self._current_group == None:
+            print 'No user created groups!'
+        else:
+            self._current_group.create_dataset(self.Lab.andor.CurImage)
+    
+    
     def modal_example_gui(self):
         '''
         running a function modally produces a progress bar, and takes care of threading stuff for you to keep the GUI responsive
