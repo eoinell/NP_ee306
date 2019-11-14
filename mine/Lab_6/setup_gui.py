@@ -12,6 +12,7 @@ from nplab.utils.gui_generator import GuiGenerator
 from nplab.ui.ui_tools import UiTools
 from nplab.experiment.gui import run_function_modally
 from nplab.instrument import Instrument
+from nplab.instrument.spectrometer.shamdor import Shamdor
 from nplab import datafile
 from nplab.utils.notified_property import DumbNotifiedProperty
 import winsound
@@ -47,7 +48,7 @@ class Lab(Instrument):
         self._initiate_CWL(ed['CWL'])
         self._initiate_wutter(ed['white_shutter'])
         self._initiate_shamrock(ed['shamrock'])
-        self._initiate_shamdor(ed['andor'])
+        self._initiate_shamdor(ed['shamdor'])
         self._initiate_power_wheel(ed['power_wheel'])
         self._initiate_aligner()
 
@@ -114,16 +115,13 @@ class Lab(Instrument):
             self.shamdor.HSSpeed=2
           
             self.shamdor.SetTemperature = -90
-            self.shamdor.CoolerON()
+            self.shamdor.cooler = True
             self.shamdor.Exposure= 1
 
             self.shamdor.ReadMode=3
             self.shamdor.SingleTrack = (100, 30)
-            self.shamdor.AcquisitionMode=3
+            self.shamdor.AcquisitionMode = 3
             
-            
-#           
-        
 ##            set the centre wavelengths up
 #            self.shamdor.ShamrockGetWavelengthLimits()
 #            self.spinbox_centrewl.setRange(self.shamdor.shamrock.wl_limits[0],
@@ -190,9 +188,9 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def SetupSignals(self): 
         self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
         self.set_power_pushButton.clicked.connect(self.set_power_gui)        
-        self.group_name_lineEdit.valueChanged.connect(self.update_group_name)
+        self.group_name_lineEdit.textChanged.connect(self.update_group_name)
         self.create_group_pushButton.clicked.connect(self.create_data_group_gui)
-        self.use_created_group_checkBox.staeChanged.connect(self.update_use_current_group)
+        self.use_created_group_checkBox.stateChanged.connect(self.update_use_current_group)
         
         self.example_pushButton.clicked.connect(self.Lab.example)
         self.modal_example_pushButton.clicked.connect(self.modal_example_gui)
@@ -202,10 +200,12 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def update_group_name(self):
         self.group_name = self.group_name_lineEdit.text() 
     def create_data_group_gui(self):
-        datafile._current_group = self.Lab.create_data_group(self.group_name)
+        self.gui_current_group = self.Lab.create_data_group(self.group_name)
+        datafile._current_group = self.gui_current_group
     def update_use_current_group(self):
         if self.use_created_group_checkBox.checkState:
-            datafile._use_current_group = True  
+            datafile._use_current_group = True
+            datafile._current_group = self.gui_current_group
         else:
             datafile._use_current_group = False  
 
@@ -241,8 +241,7 @@ if __name__ == '__main__':
     cam = LumeneraCamera(1)
     stage = ProScan("COM9")
     CWL = CameraWithLocation(cam, stage)
-    andor = Andor()
-    shamdor = shamrock(Andor)
+    shamdor = Shamdor(Andor)
     filter_wheel = FW212C()
     equipment_dict = {'spectrometer' : spec,
                     'laser_shutter' : lutter,
@@ -262,7 +261,7 @@ if __name__ == '__main__':
                           'Camera' : cam,
                           'CWL' : CWL,
                           'shamrock' : shamdor.shamrock,
-                          'shamdor' : shamdor}
+                          'andor' : shamdor}
     
     gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
                        scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
