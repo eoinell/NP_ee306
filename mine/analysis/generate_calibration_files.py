@@ -30,16 +30,16 @@ plt.rc('font',family='arial', size = 18)
 
 def transmission_function():
   
-    print r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5' 
-    OO_wl = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt' ))[0]
-    OO_halogen = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt' ))[1]
-    OO_xenon = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt' ))[2]
-    xenon_reference = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\xenon_reference.txt'))[1]
-    xenon_wl = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\xenon_reference.txt' ))[0]
+    print r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5' 
+    OO_wl = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt' ))[0]
+    OO_halogen = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt' ))[1]
+    OO_xenon = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt' ))[2]
+    xenon_reference = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\xenon_reference.txt'))[1]
+    xenon_wl = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\xenon_reference.txt' ))[0]
     OO_halogen = sm.convex_smooth(OO_halogen,10, normalise = False)[0]
     OO_xenon = sm.convex_smooth(OO_xenon,10, normalise = False)[0]
-    andor_wl = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\100x_09_NA_600lmm_785nm_5050bs.txt' ))[0][::-1]#reverses the wavelengths
-    andor_halogen = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\100x_09_NA_600lmm_785nm_5050bs.txt' ))[1][::-1]
+    andor_wl = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\100x_09_NA_600lmm_785nm_5050bs.txt' ))[0][::-1]#reverses the wavelengths
+    andor_halogen = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\100x_09_NA_600lmm_785nm_5050bs.txt' ))[1][::-1]
     
     andor_halogen = sm.convex_smooth(andor_halogen,10, normalise = True)[0]
 
@@ -54,7 +54,6 @@ def transmission_function():
     AS_andor_wl = np.polyval(AS_fit, AS_andor_wl)
     andor_cm = np.append(AS_andor_wl, S_andor_wl)
     andor_wl = cnv.cm_to_wavelength(-andor_cm, centre_wl = 785)
-    
 
     OO_halogen = scipy.interpolate.interp1d(OO_wl, OO_halogen)(andor_wl)
     OO_xenon = scipy.interpolate.interp1d(OO_wl, OO_xenon)(andor_wl)
@@ -70,10 +69,43 @@ def transmission_function():
     plt.plot(andor_wl, xenon_reference/float(max(xenon_reference)), label = 'xenon_reference')
     plt.plot(andor_wl, T/float(max(T)), label = 'transmission')
     plt.legend()
-    plt.savefig(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\Transmission_function_100x_09_NA_600lmm_785nm_5050bs')
+    
+    
+    plt.savefig(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Transmission_function_100x_09_NA_600lmm_785nm_5050bs')
     T_tuple = np.append([andor_cm], [T], axis = 0)
-    np.savetxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\Transmission_function_100x_09_NA_600lmm_785nm_5050bs.txt',T_tuple)
+    np.savetxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Transmission_function_100x_09_NA_600lmm_785nm_5050bs.txt',T_tuple)
     return T/max(T), andor_cm
+
+def IRF_OO():
+    OO_xenon = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt'))[2]
+    OO_wl = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt' ))[0]
+    xenon_reference = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\xenon_reference.txt'))[1]
+    xenon_wl = np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\xenon_reference.txt' ))[0]
+    
+    plt.figure('entire xenon')
+    plt.plot(xenon_wl, xenon_reference)
+    
+    plt.figure('Xenon and halogen')
+    plt.plot(OO_wl, np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt'))[1], label = 'Halogen')
+    plt.plot(OO_wl, np.transpose(np.loadtxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\Ocean_Optics_halogen_and_xenon.txt'))[2], label = 'Xenon')
+    plt.legend()
+    
+    xenon_ref = scipy.interpolate.interp1d(xenon_wl, xenon_reference)(OO_wl)
+    IRF_OO = (np.true_divide((OO_xenon), (xenon_ref)), OO_wl)
+    
+    plt.figure('xenon reference and OO_xenon')
+    plt.plot(OO_wl, xenon_ref/float(max(xenon_ref)), label = 'xenon_ref')
+    plt.plot(OO_wl, OO_xenon/float(max(OO_xenon)), label = 'OO_xenon')
+    
+    plt.figure('IRF')
+    plt.plot(OO_wl, IRF_OO[0]/max(IRF_OO[0]))
+    plt.legend()
+    
+    np.savetxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\IRF_OO.txt', IRF_OO)
+    
+    
+
+
 def calibrate_BPT(counts, wavelengths, notch, analysis_range, Si_counts=None, Si_wl = None):
     BPT_lines = [1278.49,1078.08,1012.33,995.828,827.954,758.232,709.338,655.325,615.569,545.529,478.053,406.404,290.517]    
     Si_line = 520.7
@@ -209,23 +241,23 @@ def calibrate_BPT(counts, wavelengths, notch, analysis_range, Si_counts=None, Si
         plt.savefig('BPT calibration plot.png')
         
         calibrated_shifts = np.append(calibrated_AS_shifts, calibrated_S_shifts)
-        np.savetxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\785nm_Stokes_polynomial.txt', S_fit)
-        np.savetxt(r'C:\Users\Eoin Elliott\Documents\GitHub\nplab\nplab\calibration\Lab 5\785nm_anti_Stokes_polynomial.txt', AS_fit)
+        np.savetxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\785nm_Stokes_polynomial.txt', S_fit)
+        np.savetxt(r'C:\Users\Eoin Elliott\Documents\GitHub\NP_ee306\mine\calibration\Lab 5\785nm_anti_Stokes_polynomial.txt', AS_fit)
         return calibrated_shifts, S_fit, AS_fit
 if __name__ == '__main__':
     start = time.time()
-    File = h5py.File(ms.findH5File(os.getcwd()), mode = 'r')   
-    scan = File['ParticleScannerScan_0']
+    #File = h5py.File(ms.findH5File(os.getcwd()), mode = 'r')   
+    #scan = File['ParticleScannerScan_0']
     #Si_counts = File['Si_3']['Power_Series'][-1]
     #Si_wl = File['Si_3']['Power_Series'].attrs['wavelengths']  
-    scan_to_be_condensed = scan['Particle_1']['power_series_5']
-    BPT_spec = np.mean(scan_to_be_condensed, axis = 0) 
-    BPT_wl = scan['Particle_1']['power_series_6'].attrs['wavelengths']
-    analysis_range = -np.inf, np.inf#cm-1
-    notch = 222
-    calibrated_shifts, S_fit, AS_fit = calibrate_BPT(BPT_spec, BPT_wl, notch, analysis_range)
+    #scan_to_be_condensed = scan['Particle_1']['power_series_5']
+    #BPT_spec = np.mean(scan_to_be_condensed, axis = 0) 
+    #BPT_wl = scan['Particle_1']['power_series_6'].attrs['wavelengths']
+    #analysis_range = -np.inf, np.inf#cm-1
+    #notch = 222
+    #calibrated_shifts, S_fit, AS_fit = calibrate_BPT(BPT_spec, BPT_wl, notch, analysis_range)
     #transmission_function()
-    
+    IRF_OO()
     #extract_temperature('BPT_1', T_NPoM = False, plot_intensities = True)
     end = time.time()
     print 'That took '+str(np.round(end - start))+ ' seconds'
