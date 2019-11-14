@@ -13,6 +13,7 @@ from nplab.ui.ui_tools import UiTools
 from nplab.experiment.gui import run_function_modally
 from nplab.instrument import Instrument
 from nplab import datafile
+from nplab.utils.notified_property import NotifiedProperty
 import winsound
 
 class Lab(Instrument):
@@ -98,7 +99,7 @@ class Lab(Instrument):
             self.shamrock.center_wavelength = 700
             self.shamrock.pixel_number = 1600
             self.shamrock.pixel_width = 16
-            def get_xaxis(self):self.shamrock.GetCalibration()
+            x_axis = NotifiedProperty(self.shamrock.GetCalibration())
             
             
 #            self.shamrock.ShamrockSetPixelWidth(16)
@@ -121,7 +122,7 @@ class Lab(Instrument):
             self.andor.ReadMode=3
             self.andor.SingleTrack = (100, 30)
             self.andor.AcquisitionMode=3
-            self.andor.x_axis = property(self.shamrock.GetCalibration())
+            self.andor.x_axis = NotifiedProperty(self.shamrock.GetCalibration())
             
 #           
         
