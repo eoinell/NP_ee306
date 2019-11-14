@@ -37,7 +37,7 @@ class Lab(Instrument):
         self.init_CWL = False
         self.init_wutter = False
         self.init_shamrock = False
-        self.init_andor = False
+        self.init_shamdor = False
         self.init_aligner = False
         self.init_power_wheel = False                
                
@@ -47,7 +47,7 @@ class Lab(Instrument):
         self._initiate_CWL(ed['CWL'])
         self._initiate_wutter(ed['white_shutter'])
         self._initiate_shamrock(ed['shamrock'])
-        self._initiate_andor(ed['andor'])
+        self._initiate_shamdor(ed['andor'])
         self._initiate_power_wheel(ed['power_wheel'])
         self._initiate_aligner()
 
@@ -98,32 +98,29 @@ class Lab(Instrument):
             self.shamrock.SetSlit(100)
             self.shamrock.center_wavelength = 700
             self.shamrock.pixel_number = 1600
-            self.shamrock.pixel_width = 16
-
-x_axis = DumbNotifiedProperty(self.shamrock.GetCalibration())
-            
+            self.shamrock.pixel_width = 16       
             
 #            self.shamrock.ShamrockSetPixelWidth(16)
 #            self.shamrock.ShamrockSetNumberPixels(1600)
 #            self.shamrock.ShamrockGetWavelengthLimits()
             self.init_shamrock = True
-    def _initiate_andor(self, instrument):
-        if self.init_andor is True:
-            print 'Andor already initialised'
+    def _initiate_shamdor(self, instrument):
+        if self.init_shamdor is True:
+            print 'shamdor already initialised'
         else:            
-            self.andor = instrument
+            self.shamdor = instrument
  
-            self.andor_exposure = 1               
-            self.andor.HSSpeed=2
+            self.shamdor_exposure = 1               
+            self.shamdor.HSSpeed=2
           
-            self.andor.SetTemperature = -90
-            self.andor.CoolerON()
-            self.andor.Exposure= 1
+            self.shamdor.SetTemperature = -90
+            self.shamdor.CoolerON()
+            self.shamdor.Exposure= 1
 
-            self.andor.ReadMode=3
-            self.andor.SingleTrack = (100, 30)
-            self.andor.AcquisitionMode=3
-            self.andor.x_axis = DumbNotifiedProperty(self.shamrock.GetCalibration())
+            self.shamdor.ReadMode=3
+            self.shamdor.SingleTrack = (100, 30)
+            self.shamdor.AcquisitionMode=3
+            
             
 #           
         
@@ -131,7 +128,7 @@ x_axis = DumbNotifiedProperty(self.shamrock.GetCalibration())
 #            self.shamdor.ShamrockGetWavelengthLimits()
 #            self.spinbox_centrewl.setRange(self.shamdor.shamrock.wl_limits[0],
 #                                           self.shamdor.shamrock.wl_limits[1])
-            self.init_andor = True
+            self.init_shamdor = True
     def _initiate_aligner(self):
         if self.init_aligner is True:                 
             print 'Spectrometer aligner already initiated'
@@ -148,7 +145,7 @@ x_axis = DumbNotifiedProperty(self.shamrock.GetCalibration())
             
     def fancy_capture(self):
         '''
-        Takes a spectrum on the Andor, but turns off the white light and turns on the laser first, 
+        Takes a spectrum on the shamdor, but turns off the white light and turns on the laser first, 
         then restores the instrument to its initial state
         '''
         wutter_open = self.wutter.is_open()
@@ -157,7 +154,7 @@ x_axis = DumbNotifiedProperty(self.shamrock.GetCalibration())
         if lutter_closed: self.lutter.close_shutter()
         
 #        time.sleep(0.1)
-        self.andor.raw_image(update_latest_frame=True)
+        self.shamdor.raw_image(update_latest_frame=True)
         
         if wutter_open: self.wutter.open_shutter()
         if lutter_closed: self.wutter.close_shutter()
@@ -244,16 +241,16 @@ if __name__ == '__main__':
     cam = LumeneraCamera(1)
     stage = ProScan("COM9")
     CWL = CameraWithLocation(cam, stage)
-    shamrock = Shamrock()
     andor = Andor()
+    shamdor = shamrock(Andor)
     filter_wheel = FW212C()
     equipment_dict = {'spectrometer' : spec,
                     'laser_shutter' : lutter,
                     'white_shutter' : wutter,
                     'camera' : cam,
                     'CWL' : CWL,
-                    'shamrock' : shamrock,
-                    'andor' : andor,
+                    'shamrock' : shamdor.shamrock,
+                    'shamdor' : shamdor,
                     'power_wheel' : filter_wheel}
                  
     File = datafile.current()
@@ -264,8 +261,8 @@ if __name__ == '__main__':
                           'white_shutter' : wutter,
                           'Camera' : cam,
                           'CWL' : CWL,
-                          'shamrock' : shamrock,
-                          'Andor' : andor}
+                          'shamrock' : shamdor.shamrock,
+                          'shamdor' : shamdor}
     
     gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
                        scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
