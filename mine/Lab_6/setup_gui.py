@@ -149,13 +149,13 @@ class Lab(Instrument):
         wutter_open = self.wutter.is_open()
         lutter_closed = self.lutter.is_closed()
         if wutter_open: self.wutter.close_shutter()
-        if lutter_closed: self.lutter.close_shutter()
+        if lutter_closed: self.lutter.toggle() # toggle is more efficient than open/close
         
 #        time.sleep(0.1)
         self.shamdor.raw_image(update_latest_frame=True)
         
         if wutter_open: self.wutter.open_shutter()
-        if lutter_closed: self.wutter.close_shutter()
+        if lutter_closed: self.lutter.toggle()
 
     def example(self):
         print "I'm an example"
