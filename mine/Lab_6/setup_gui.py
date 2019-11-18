@@ -200,12 +200,17 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def update_group_name(self):
         self.group_name = self.group_name_lineEdit.text() 
     def create_data_group_gui(self):
+        init_use_cur = datafile._use_current_group
+        datafile._use_current_group = False
         self.gui_current_group = self.Lab.create_data_group(self.group_name)
-        datafile._current_group = self.gui_current_group
+        if self.use_created_group_checkBox.checkState: 
+            datafile._current_group = self.gui_current_group
+        if init_use_cur: datafile._use_current_group = True
     def update_use_current_group(self):
         if self.use_created_group_checkBox.checkState:
             datafile._use_current_group = True
-            datafile._current_group = self.gui_current_group
+            try:datafile._current_group = self.gui_current_group
+            except: print 'No created group (yet)!'
         else:
             datafile._use_current_group = False  
 
