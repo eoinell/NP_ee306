@@ -191,7 +191,6 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.group_name_lineEdit.textChanged.connect(self.update_group_name)
         self.create_group_pushButton.clicked.connect(self.create_data_group_gui)
         self.use_created_group_checkBox.stateChanged.connect(self.update_use_current_group)
-        
         self.example_pushButton.clicked.connect(self.Lab.example)
         self.modal_example_pushButton.clicked.connect(self.modal_example_gui)
         self.steps_spinBox.valueChanged.connect(self.update_steps)
