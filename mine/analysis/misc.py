@@ -100,7 +100,7 @@ def stokesratio(Stokes_counts, antiStokes_counts, shift, laser_wavelength = 785.
     omega_S = cnv.simple_wavelength_to_omega(laser_wavelength)-omega
     logarg = (np.array(Stokes_counts)/np.array(antiStokes_counts))*(omega_AS/omega_S)**4
     T = scipy.constants.hbar*omega/(scipy.constants.k*np.log(logarg))
-    return T        
+    return T # is an ndarray       
             
 def condenseZscan(zScan, normalised = False):    
     #
