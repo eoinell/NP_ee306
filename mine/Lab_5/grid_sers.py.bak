@@ -6,10 +6,6 @@ Grid SERS
 
 @author: Eoin Elliott
 """
-from __future__ import division
-from __future__ import print_function
-from builtins import zip
-from past.utils import old_div
 from scipy.interpolate import griddata
 import time
 from nplab import datafile
@@ -34,10 +30,10 @@ def grid_SERS(ed, group, step_size, steps): # size in um
     lutter.open_shutter()
     initial_position = stage.get_position() # array   
     z = initial_position[2]
-    xs = np.linspace(0,(steps)*step_size, num = steps, endpoint = True) - old_div((steps)*step_size,2)
-    ys = np.linspace(0,(steps)*step_size, num = steps, endpoint = True) - old_div((steps)*step_size,2)
+    xs = np.linspace(0,(steps)*step_size, num = steps, endpoint = True) - (steps)*step_size/2
+    ys = np.linspace(0,(steps)*step_size, num = steps, endpoint = True) - (steps)*step_size/2
     xs += initial_position[0]
-    print(xs)
+    print xs
     ys += initial_position[1]
     counter = -1
     places = []
@@ -60,7 +56,7 @@ def grid_SERS(ed, group, step_size, steps): # size in um
     for place in places:
         stage.move(place)
 #        print place
-        print(place-initial_position)       
+        print place-initial_position       
         time.sleep(0.5)
         captures.append(trandor.capture()[0])
     

@@ -5,19 +5,14 @@ Spyder Editor
 
 This is a temporary script file.
 """
-from __future__ import division
-from __future__ import print_function
-from builtins import str
-from builtins import range
-from past.utils import old_div
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def watts_to_area(mW, spot_diameter): #mW, um
     uW = mW*1000
-    spot_area = ((old_div(spot_diameter,2))**2)*np.pi
-    umm2 = old_div(uW,spot_area)
+    spot_area = ((spot_diameter/2)**2)*np.pi
+    umm2 = uW/spot_area
     return umm2
     
 deg_array = np.arange(15,375,15)
@@ -41,15 +36,15 @@ for i in range(24):
     laser_line_array[i] = np.max(cnts[400:600])
     peak_array[i] = np.max(cnts[600:])
     
-    norm_peak_array[i] = old_div(peak_array[i],laser_line_array[i]) 
-    print(np.argmax(cnts[600:])+600)
+    norm_peak_array[i] = peak_array[i]/laser_line_array[i] 
+    print np.argmax(cnts[600:])+600
     shift_peak_array[i] = shift[np.argmax(cnts[400:600])+400]
 
         
         
 
     
-plt.plot(deg_array,old_div(peak_array,norm_fac))
+plt.plot(deg_array,peak_array/norm_fac)
 
 plt.legend(frameon = False)
 plt.xlabel('angle (deg)', fontname = 'arial',fontsize = '16')
@@ -57,7 +52,7 @@ plt.ylabel('Counts/$\mu$m/$\mu$m$^2$', fontname = 'arial', fontsize = '16')
 #plt.legend()
 plt.tick_params(direction = 'in')
 plt.figure()
-plt.plot(deg_array,old_div(norm_peak_array,norm_fac))
+plt.plot(deg_array,norm_peak_array/norm_fac)
 #plt.legend(frameon = False)
 plt.xlabel('angle (deg)', fontname = 'arial',fontsize = '16')
 plt.ylabel('normalised intensity', fontname = 'arial', fontsize = '16')

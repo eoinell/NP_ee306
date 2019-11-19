@@ -4,7 +4,6 @@ Created on Thu Aug 01 16:38:56 2019
 
 @author: Hera
 """
-from __future__ import print_function
 import sys
 import numpy as np
 import time
@@ -55,13 +54,13 @@ class Lab(Instrument):
 
     def _initiate_spectrometer(self, instrument):
         if self.init_spec is True:        
-            print('Spectrometer already initialised')
+            print 'Spectrometer already initialised'
         else:
             self.spec = instrument
             self.init_spec = True
     def _initiate_lutter(self, instrument):
         if self.init_lutter is True:
-            print('Laser shutter already initialised')
+            print 'Laser shutter already initialised'
         else:
             self.lutter = instrument
             self.lutter.set_mode(1)
@@ -69,7 +68,7 @@ class Lab(Instrument):
 
     def _initiate_cam(self, instrument):
         if self.init_cam is True:
-            print('Camera already initalised')
+            print 'Camera already initalised'
         else:
             self.cam = instrument
             self.cam.exposure=800.
@@ -77,14 +76,14 @@ class Lab(Instrument):
             self.init_cam = True
     def _initiate_CWL(self, instrument):
         if self.init_CWL is True:
-            print('Camera with location already initialised')
+            print 'Camera with location already initialised'
         else:
             self.CWL = instrument
             self.CWL.load_calibration()
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
         if self.init_wutter is True :           
-            print('White light shutter already initialised')
+            print 'White light shutter already initialised'
         else:            
             self.wutter = instrument
             self.wutter.close_shutter()            
@@ -92,7 +91,7 @@ class Lab(Instrument):
             self.init_wutter = True
     def _initiate_shamrock(self, instrument):
         if self.init_shamrock is True:
-            print('Shamrock already initialised')
+            print 'Shamrock already initialised'
         else:            
             self.shamrock = instrument             
             self.shamrock_centre_wl = 700            
@@ -108,7 +107,7 @@ class Lab(Instrument):
             self.init_shamrock = True
     def _initiate_shamdor(self, instrument):
         if self.init_shamdor is True:
-            print('shamdor already initialised')
+            print 'shamdor already initialised'
         else:            
             self.shamdor = instrument
  
@@ -130,14 +129,14 @@ class Lab(Instrument):
             self.init_shamdor = True
     def _initiate_aligner(self):
         if self.init_aligner is True:                 
-            print('Spectrometer aligner already initiated')
+            print 'Spectrometer aligner already initiated'
         else:
             
             self.aligner = SpectrometerAligner(self.spec, self.CWL.stage)
             self.init_aligner = True
     def _initiate_power_wheel(self, instrument):
         if self.init_power_wheel is True:
-            print('Power Wheel already initialised')
+            print 'Power Wheel already initialised'
         else:            
             self.power_wheel = instrument
             self.power_wheel.setPosition(1)
@@ -159,7 +158,7 @@ class Lab(Instrument):
         if lutter_closed: self.lutter.toggle()
 
     def example(self):
-        print("I'm an example")
+        print "I'm an example"
         winsound.Beep(100,500)
         group = self.create_data_group('example_group')
         group.create_dataset('example', data = [0,1,2,3])
@@ -210,7 +209,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         if self.use_created_group_checkBox.checkState:
             datafile._use_current_group = True
             try:datafile._current_group = self.gui_current_group
-            except: print('No created group (yet)!')
+            except: print 'No created group (yet)!'
         else:
             datafile._use_current_group = False  
 
