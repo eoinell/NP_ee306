@@ -4,7 +4,6 @@ Created on Tue Nov 19 14:59:23 2019
 
 @author: Hera
 """
-
 from nplab.instrument.camera.lumenera import LumeneraCamera
 from nplab.instrument.stage.prior import ProScan
 from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
