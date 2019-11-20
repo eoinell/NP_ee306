@@ -305,9 +305,8 @@ class Lab(Instrument):
                      update_progress=lambda p:p):        
         self.update_power_calibration()  # necessary if changed lasers      
         
-        if tick_this_box == False:
-            self.create_data_group(self.power_series_name)
-            group = datafile._current_group 
+        if tick_this_box == False:  
+            group = self.create_data_group(self.power_series_name)
         else:
             group = self.wizard.particle_group             
 
