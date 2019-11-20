@@ -301,10 +301,10 @@ class Lab(Instrument):
             print 'Power Calibration not found'
     def Power_Series(self,
                      tick_this_box = False,
-                     focus_with_laser = True,
+                     focus_with_laser = False,
                      update_progress=lambda p:p):        
         self.update_power_calibration()  # necessary if changed lasers      
-        
+        update_progress(0)
         if tick_this_box == False:  
             group = self.create_data_group(self.power_series_name)
         else:
@@ -340,22 +340,20 @@ class Lab(Instrument):
         self.wutter.close_shutter() 
         self.lutter.open_shutter()        
         time.sleep(0.2)    
-
+        
         for index, Power in enumerate(self.Powers):
             self.focus_with_laser()            
             attrs['power'] = Power           
             self.lutter.close_shutter()   
             self.wutter.open_shutter() 
             time.sleep(5)
-            group.create_dataset('spectrum_before_%d', data = self.spec.read())            
+            #group.create_dataset('spectrum_before_%d', data = self.spec.read())            
             self.wutter.close_shutter()   
             self.lutter.open_shutter()            
             
             Captures = []            
-            if self.laser == '_785': self.rotate_to(self.Power_to_Angle(Power))  
-            if self.laser == '_633': self.AOM.Power(self.Power_to_Voltage(Power))              
+            self.Power(Power)              
             time.sleep(0.2)
-            attrs['measured_power'] = self.read_pometer()  
             attrs['measured_power'] = self.read_pometer()  
             nkin = int(kinetic_fac/Power) 
             if nkin<1: nkin = 1
@@ -363,12 +361,9 @@ class Lab(Instrument):
             Captures.append(self.trandor.capture()[0])
             self.lutter.close_shutter()   
             self.wutter.open_shutter()
-            time.sleep(5)            
-           
-
-            To_Save = []            
+            To_Save = []
             for i in Captures:
-                To_Save+=np.reshape(i,[len(i)/1600,1600]).tolist()
+                To_Save+=np.reshape(i,[len(i)/1600,1600]).tolist()              
                 group.create_dataset('power_series_%d',data=To_Save,attrs=attrs)  
             update_progress(index)
         self.lutter.close_shutter()   
