@@ -28,6 +28,8 @@ def laser_merit(im):
     try: merit = 1/(max(roots)-min(roots))
     except: merit = 0
     return merit
+
+
 class Lab(Instrument):
     '''
     meta-instrument for all the equipment in Lab 5. Works analogously to CWL in many respects. 
@@ -58,6 +60,7 @@ class Lab(Instrument):
         Instrument.__init__(self)
 
     def initiate_all(self, ed):
+        
         self.init_spec = False
         self.init_lutter = False
         self.init_FW = False
@@ -68,6 +71,7 @@ class Lab(Instrument):
         self.init_trandor = False
         self.init_aligner = False                
         self.init_AOM = False               
+        
         self._initiate_spectrometer(ed['spec'])
         self._initiate_lutter(ed['lutter'])
         self._initiate_FW(ed['FW'])
