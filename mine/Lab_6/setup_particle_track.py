@@ -16,6 +16,21 @@ from nplab.instrument.spectrometer.shamdor import Shamdor
 from nplab import datafile
 from nplab.utils.notified_property import DumbNotifiedProperty
 
+def thumb_focus():
+        CWL.autofocus(use_thumbnail = True)        
+    
+
+def SERS():
+    wutter.close_shutter()        
+    lutter.open_shutter()
+    time.sleep(0.2)    
+    dump, to_save = shamdor.raw_snapshot()
+    to_save.attrs['x_axis'] = shamdor.x_axis
+    tosave.attrs['wavelengths'] = shamdor.x_axis
+    wizard.particle_group.create_dataset('SERS', data = to_save, attrs = attrs)
+    wutter.open_shutter()        
+    lutter.close_shutter()
+    return to_save 
 
 if __name__ == '__main__':
     import os
@@ -30,6 +45,7 @@ if __name__ == '__main__':
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.stage.Thorlabs_FW212C import FW212C   
     from particle_tracking_app.particle_tracking_wizard import TrackingWizard
+    from setup_gui import Lab
 
     os.chdir(r'C:\Users\np-albali\Documents')       
     spec = OceanOpticsSpectrometer(0) 
@@ -42,37 +58,44 @@ if __name__ == '__main__':
     shamdor = Shamdor(Andor)
     filter_wheel = FW212C()
     alinger = SpectrometerAligner(spec,stage)
-    equipment_dict = {'spectrometer':spec,
-                      'alinger':alinger, 
-                      'shamdor' : shamdor}
-
-    def thumb_focus():
-        CWL.autofocus(use_thumbnail = True)        
+    #=================================================#
     
-
-    def SERS():
-        wutter.close_shutter()        
-        lutter.open_shutter()
-        time.sleep(0.2)    
-        dump, to_save = shamdor.raw_snapshot()
-        attrs = to_save.attrs
-        attrs['x_axis'] = shamdor.x_axis
-        attrs['wavelengths'] = attrs['x_axis'][::-1]
-        
-        wizard.particle_group.create_dataset('SERS', data = to_save, attrs = attrs)
-        wutter.open_shutter()        
-        lutter.close_shutter()
-        return to_save 
-    
-    spec.show_gui(blocking = False)
-    shamdor.show_gui(blocking = False)
-    shamdor.shamrock.show_gui(blocking = False)
-    CWL.show_gui(blocking = False)
-    
-    wutter.open_shutter()
-    lutter.close_shutter()
-    wizard = TrackingWizard(CWL,equipment_dict,task_list = ['thumb_focus','CWL.thumb_image','alinger.z_scan', 'SERS'])
+    track_dict = {'spectrometer':spec,
+                  'alinger':alinger, 
+                  'shamdor' : shamdor}
+    File = datafile.current()
+    wizard = TrackingWizard(CWL,track_dict,task_list = ['thumb_focus','CWL.thumb_image','alinger.z_scan', 'SERS'])
     wizard.data_file.show_gui(blocking = False)
-    wizard.show()
+    wizard.show(blocking = False)
+    
+    #=================================================#
+    
+    lab_dict = {'spectrometer' : spec,
+                'laser_shutter' : lutter,
+                'white_shutter' : wutter,
+                'camera' : cam,
+                'CWL' : CWL,
+                'shamrock' : shamdor.shamrock,
+                'shamdor' : shamdor,
+                'power_wheel' : filter_wheel}
+    lab = Lab(lab_dict)
+    
+    #=================================================#
+    
+    gui_equipment_dict = {'Lab' : lab,
+                          'spectrometer' : spec,
+                          'laser_shutter' : lutter,
+                          'white_shutter' : wutter,
+                          'Camera' : cam,
+                          'CWL' : CWL,
+                          'shamrock' : shamdor.shamrock,
+                          'andor' : shamdor}
+    
+    gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
+                       scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
+    gui.show()
+    
+    #=================================================#
+    
     
     
