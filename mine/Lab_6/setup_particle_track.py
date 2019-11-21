@@ -26,7 +26,7 @@ def SERS():
     time.sleep(0.2)    
     dump, to_save = shamdor.raw_snapshot()
     to_save.attrs['x_axis'] = shamdor.x_axis
-    tosave.attrs['wavelengths'] = shamdor.x_axis
+    to_save.attrs['wavelengths'] = shamdor.x_axis
     wizard.particle_group.create_dataset('SERS', data = to_save, attrs = attrs)
     wutter.open_shutter()        
     lutter.close_shutter()
@@ -58,6 +58,7 @@ if __name__ == '__main__':
     shamdor = Shamdor(Andor)
     filter_wheel = FW212C()
     alinger = SpectrometerAligner(spec,stage)
+    
     #=================================================#
     
     track_dict = {'spectrometer':spec,
