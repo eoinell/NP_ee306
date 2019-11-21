@@ -51,20 +51,28 @@ if __name__ == '__main__':
     
 
     def SERS():
+        wutter.close_shutter()        
+        lutter.open_shutter()
+        time.sleep(0.2)    
         dump, to_save = shamdor.raw_snapshot()
         attrs = to_save.attrs
-        attrs['wavelengths'] = attrs['x_axis']
+        attrs['x_axis'] = shamdor.x_axis
+        attrs['wavelengths'] = attrs['x_axis'][::-1]
+        
         wizard.particle_group.create_dataset('SERS', data = to_save, attrs = attrs)
+        wutter.open_shutter()        
+        lutter.close_shutter()
         return to_save 
-
+    
+    spec.show_gui(blocking = False)
     shamdor.show_gui(blocking = False)
     shamdor.shamrock.show_gui(blocking = False)
     CWL.show_gui(blocking = False)
-    spec.show_gui(blocking = False)
     
+    wutter.open_shutter()
+    lutter.close_shutter()
     wizard = TrackingWizard(CWL,equipment_dict,task_list = ['thumb_focus','CWL.thumb_image','alinger.z_scan', 'SERS'])
     wizard.data_file.show_gui(blocking = False)
     wizard.show()
     
-    if dump==dump:pass   
-        
+    
