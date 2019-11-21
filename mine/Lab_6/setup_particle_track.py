@@ -45,7 +45,7 @@ if __name__ == '__main__':
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.stage.Thorlabs_FW212C import FW212C   
     from particle_tracking_app.particle_tracking_wizard import TrackingWizard
-    from setup_gui import Lab
+    from mine.Lab_6.setup_gui import Lab
 
     os.chdir(r'C:\Users\np-albali\Documents')       
     spec = OceanOpticsSpectrometer(0) 
