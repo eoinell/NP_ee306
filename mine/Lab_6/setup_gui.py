@@ -13,6 +13,7 @@ from nplab.ui.ui_tools import UiTools
 from nplab.experiment.gui import run_function_modally
 from nplab.instrument import Instrument
 from nplab.instrument.spectrometer.shamdor import Shamdor
+from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
 from nplab import datafile
 from nplab.utils.notified_property import DumbNotifiedProperty
 import winsound
@@ -29,8 +30,7 @@ class Lab(Instrument):
         self.lutter.close_shutter()
         self.wutter.open_shutter()  
         self.steps = 5 
-        Instrument.__init__(self)    
-
+        Instrument.__init__(self) 
     def initiate_all(self, ed):
         self.init_spec = False
         self.init_lutter = False
