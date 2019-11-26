@@ -334,7 +334,7 @@ class Lab(Instrument):
         self.lutter.close_shutter()
         self.wutter.open_shutter()
         group.create_dataset('image_before',data = self.CWL.thumb_image())        
-        #self.aligner.optimise(0.003, max_steps=10, stepsize=0.5, npoints=3, dz=0.02,verbose=False)
+#        self.aligner.optimise(0.003, max_steps=10, stepsize=0.5, npoints=3, dz=0.02,verbose=False)
         data = self.aligner.z_scan(dz =np.arange(-0.25,0.25,0.05))   
         group.create_dataset('z_scan_before', data = data, attrs = data.attrs)   
         self.wutter.close_shutter() 
@@ -342,15 +342,15 @@ class Lab(Instrument):
         time.sleep(0.2)    
         
         for index, Power in enumerate(self.Powers):
-            self.focus_with_laser()            
+            if focus_with_laser == True: self.focus_with_laser()            
             attrs['power'] = Power           
             self.lutter.close_shutter()   
             self.wutter.open_shutter() 
             time.sleep(5)
-            #group.create_dataset('spectrum_before_%d', data = self.spec.read())            
+            group.create_dataset('spectrum_before_%d', data = self.spec.read())            
             self.wutter.close_shutter()   
             self.lutter.open_shutter()            
-            
+#            
             Captures = []            
             self.Power(Power)              
             time.sleep(0.2)
@@ -421,21 +421,21 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.spinBox_max_nkin.setValue(self.Lab.max_nkin)
         self.checkBox_ramp.stateChanged.connect(self.update_ramp)
         self.pushButton_Power_Series.clicked.connect(self.Power_Series_gui)
-        self.doubleSpinBox_min_param.valueChanged.connect(self.update_min_max_params)
-        self.doubleSpinBox_max_param.valueChanged.connect(self.update_min_max_params)
         if self.Lab.laser == '_785':
-            self.doubleSpinBox_min_param.value = self.Lab.minangle
-            self.doubleSpinBox_max_param.value = self.Lab.maxangle
+            self.doubleSpinBox_min_param.setValue(self.Lab.minangle)
+            self.doubleSpinBox_max_param.setValue(self.Lab.maxangle)
         if self.Lab.laser == '_633':
-            self.doubleSpinBox_min_param = self.Lab.minvolt 
-            self.doubleSpinBox_max_param.value = self.Lab.maxvolt
-            
+            self.doubleSpinBox_min_param.setValue(self.Lab.minvolt)
+            self.doubleSpinBox_max_param.setValue(self.Lab.maxvolt)
+        self.doubleSpinBox_min_param.valueChanged.connect(self.update_min_max_params)
+        self.doubleSpinBox_max_param.valueChanged.connect(self.update_min_max_params)    
         self.pushButton_set_param.clicked.connect(self.set_param)
         self.pushButton_lutter.clicked.connect(self.Lab.lutter.toggle)
         self.pushButton_wutter.clicked.connect(self.Lab.wutter.toggle)
         self.lineEdit_Power_Series_Name.textChanged.connect(self.update_power_series_name)
         self.doubleSpinBox_measured_power.valueChanged.connect(self.update_measured_power)        
         self.pushButton_particletrack.clicked.connect(self.Lab._launch_particle_track)
+    
     def update_power_series_name(self):
         self.power_series_name = self.lineEdit_Power_Series_Name.text() 
     def _select_laser_633(self):
@@ -443,12 +443,12 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
             self.checkBox_785.setChecked(False)
             self.Lab.laser = '_633' 
             self.Lab.pometer.sense.correction.wavelength = 633
-            self.anglez = np.linspace(self.minangle , self.maxangle, num = 50, endpoint = True)
+            self.anglez = np.linspace(self.Lab.minangle , self.Lab.maxangle, num = 50, endpoint = True)
         else:
             self.checkBox_785.setChecked(True)
             self.Lab.laser = '_785'
             self.Lab.pometer.sense.correction.wavelength = 785
-            self.Lab.anglez = np.logspace(0,np.log10(self.maxangle - self.minangle),50)+self.minangle
+            self.Lab.anglez = np.logspace(0,np.log10(self.Lab.maxangle - self.Lab.minangle),50)+self.Lab.minangle
     def _select_laser_785(self):
         if self.checkBox_785.isChecked() == True:       
             self.checkBox_633.setChecked(False)
@@ -482,7 +482,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
             self.Lab.maxangle = self.doubleSpinBox_max_param.value()
             self.Lab.anglez = np.logspace(0,np.log10(self.Lab.maxangle-self.Lab.minangle),50)+self.Lab.minangle
             self.Lab.midangle = (self.Lab.maxangle - self.Lab.minangle)/2
-        if self.laser == '_633':
+        if self.Lab.laser == '_633':
             self.Lab.minvolt = self.doubleSpinBox_min_param.value()
             self.Lab.maxvolt = self.doubleSpinBox_max_param.value() 
             if self.maxvolt>1:
@@ -503,7 +503,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def Calibrate_Power_gui(self):
         run_function_modally(self.Lab.Calibrate_Power, progress_maximum = len(self.Lab.anglez) if self.Lab.laser == '785' else len(self.Lab.voltagez))
     def Power_Series_gui(self):
-        run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.ramp == True else self.Lab.steps*2)
+        run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.ramp == False else self.Lab.steps*2)
 
 
 if __name__ == '__main__': 
@@ -526,7 +526,6 @@ if __name__ == '__main__':
     os.chdir(r'C:\Users\00\Documents\ee306')    
     app = QtWidgets.QApplication(sys.argv)    
     rm= visa.ResourceManager()
-    
     spec = OceanOpticsSpectrometer(0) 
     lutter = ThorLabsSC10('COM30')
     FW=[RS.Filter_Wheel()] 
