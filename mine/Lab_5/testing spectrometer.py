@@ -26,7 +26,7 @@ import time
 spec = OceanOpticsSpectrometer(0)
 spec.show_gui(blocking = False)
 trandor=Trandor()
-trandor.exposure = 30
+trandor.Exposure = 31
 def busy_work(update_progress = lambda p:p):
     start = time.time()        
     elapsed = 0    
@@ -35,7 +35,9 @@ def busy_work(update_progress = lambda p:p):
         elapsed = time.time()-start
         update_progress(elapsed)
 def run():
-    run_function_modally(busy_work, progress_maximum = 30)
+    #run_function_modally(busy_work, progress_maximum = 30)
+    run_function_modally(tr, progress_maximum = 1)
 
-def tr():
-    trandor.Capture()
+def tr(update_progress = lambda p:p):
+    trandor.raw_snapshot()
+    print 'done'

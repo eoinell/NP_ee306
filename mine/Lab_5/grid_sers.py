@@ -22,10 +22,11 @@ def grid_SERS(ed, group, step_size, steps): # size in um
     lutter.close_shutter()
     wutter.open_shutter()
     time.sleep(2)
+    #Lab.Power(0.02)
     group.create_dataset('image_before',data = CWL.thumb_image()) 
     data = aligner.z_scan(dz =np.arange(-0.25,0.25,0.05))    
     group.create_dataset('z_scan', data = data)
-    exp.focus_with_laser()    
+    Lab.focus_with_laser()    
     wutter.close_shutter()
     lutter.open_shutter()
     initial_position = stage.get_position() # array   
@@ -61,9 +62,11 @@ def grid_SERS(ed, group, step_size, steps): # size in um
         captures.append(trandor.capture()[0])
     
     
-    
+    stage.move(initial_position)
     attrs = trandor.metadata
+    attrs['pixel_to_sample'] = CWL.pixel_to_sample_displacement
     attrs['places'] = places
+#    attrs['power'] = 0.02
     group.create_dataset('SERS', data = captures, attrs = attrs) 
     stage.move(initial_position)
     lutter.close_shutter()
@@ -98,15 +101,15 @@ def plot_grid(intensities, places):
     plt.plot(intensities)
     
     
-grid_sers_dict = {'lutter' : exp.lutter,
-                  'CWL' : exp.CWL,
-                  'wutter' : exp.wutter,
-                  'trandor' : exp.trandor,
-                  'focus_with_laser' : exp.focus_with_laser,
-                  'aligner' : exp.aligner}    
+grid_sers_dict = {'lutter' : Lab.lutter,
+                  'CWL' : Lab.CWL,
+                  'wutter' : Lab.wutter,
+                  'trandor' : Lab.trandor,
+                  'focus_with_laser' : Lab.focus_with_laser,
+                  'aligner' : Lab.aligner}    
 
 File = datafile.current()
-grid_sers_group = File.create_group('Grid_SERS_BPT_%d')
+grid_sers_group = File.create_group('Slit_now_300_ was 100. ')
 #exp.Power(0.3)
 
 intensities, places, = grid_SERS(grid_sers_dict, grid_sers_group, 0.1, 11)
