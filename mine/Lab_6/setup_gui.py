@@ -15,7 +15,6 @@ from nplab.instrument import Instrument
 from nplab.instrument.spectrometer.shamdor import Shamdor
 from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
 from nplab import datafile
-from nplab.utils.notified_property import DumbNotifiedProperty
 import winsound
 
 class Lab(Instrument):
@@ -32,6 +31,7 @@ class Lab(Instrument):
         self.steps = 5 
         Instrument.__init__(self) 
     def initiate_all(self, ed):
+        
         self.init_spec = False
         self.init_lutter = False
         self.init_cam = False
@@ -71,7 +71,7 @@ class Lab(Instrument):
             print 'Camera already initalised'
         else:
             self.cam = instrument
-            self.cam.exposure=800.
+            self.cam.exposure=200.
             self.cam.gain = 20.
             self.init_cam = True
     def _initiate_CWL(self, instrument):
@@ -228,14 +228,11 @@ if __name__ == '__main__':
     from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
     from nplab.instrument.camera.lumenera import LumeneraCamera
     from nplab.instrument.camera.camera_with_location import CameraWithLocation
-    from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
     from nplab.instrument.stage.prior import ProScan
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
-    from nplab.instrument.spectrometer.shamrock import Shamrock
     from nplab.instrument.camera.Andor import Andor
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.stage.Thorlabs_FW212C import FW212C   
-    from particle_tracking_app.particle_tracking_wizard import TrackingWizard
 
     os.chdir(r'C:\Users\np-albali\Documents')       
     spec = OceanOpticsSpectrometer(0) 
