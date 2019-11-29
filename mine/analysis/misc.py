@@ -91,7 +91,8 @@ def truncate(counts, wavelengths, lower_cutoff, upper_cutoff, return_indices_onl
     else:
         return l,u
 def find_closest(value_to_match, array):
-    '''Taking an input value and array, it searches for the value and index in the array which is closest to the input value '''
+    '''Taking an input value and array, it searches for the value and index in the array which is closest to the input value 
+    returns value, index, residual'''
     if len(array) == 1:
         return array[0], 0, np.absolute(value_to_match - array[0])
     residual = []
