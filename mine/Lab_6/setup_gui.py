@@ -80,7 +80,8 @@ class Lab(Instrument):
             print('Camera with location already initialised')
         else:
             self.CWL = instrument
-            self.CWL.load_calibration()
+            try: self.CWL.load_calibration()
+            except: print('Stage not XY calibrated')
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
         if self.init_wutter is True :           
@@ -184,7 +185,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         uic.loadUi(r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\setup_gui.ui', self)
         self.Lab = lab
         self.group_name = 'particle_%d' 
-        self._current_group = None
+        self.gui_current_group = None
         self.SetupSignals()
     def SetupSignals(self): 
         self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
@@ -231,7 +232,6 @@ if __name__ == '__main__':
     from nplab.instrument.camera.camera_with_location import CameraWithLocation
     from nplab.instrument.stage.prior import ProScan
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
-    from nplab.instrument.camera.Andor import Andor
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.stage.Thorlabs_FW212C import FW212C   
 
@@ -243,7 +243,7 @@ if __name__ == '__main__':
     cam = LumeneraCamera(1)
     stage = ProScan("COM9")
     CWL = CameraWithLocation(cam, stage)
-    shamdor = Shamdor(Andor)
+    shamdor = Shamdor(use_shifts = False)
     filter_wheel = FW212C()
     equipment_dict = {'spectrometer' : spec,
                     'laser_shutter' : lutter,
