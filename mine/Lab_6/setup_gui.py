@@ -30,6 +30,7 @@ class Lab(Instrument):
         self.lutter.close_shutter()
         self.wutter.open_shutter()  
         self.steps = 5 
+        self.laser = '_633'
         Instrument.__init__(self) 
     def initiate_all(self, ed):
         
@@ -52,7 +53,8 @@ class Lab(Instrument):
         self._initiate_shamdor(ed['shamdor'])
         self._initiate_power_wheel(ed['power_wheel'])
         self._initiate_aligner()
-
+        
+    
     def _initiate_spectrometer(self, instrument):
         if self.init_spec is True:        
             print('Spectrometer already initialised')
@@ -96,16 +98,12 @@ class Lab(Instrument):
             print('Shamrock already initialised')
         else:            
             self.shamrock = instrument             
-            self.shamrock_centre_wl = 700            
+            self.shamrock_centre_wl = 650            
             self.shamrock.HSSpeed=2
             self.shamrock.SetSlit(100)
-            self.shamrock.center_wavelength = 700
+            self.shamrock.center_wavelength = 650
             self.shamrock.pixel_number = 1600
             self.shamrock.pixel_width = 16       
-            
-#            self.shamrock.ShamrockSetPixelWidth(16)
-#            self.shamrock.ShamrockSetNumberPixels(1600)
-#            self.shamrock.ShamrockGetWavelengthLimits()
             self.init_shamrock = True
     def _initiate_shamdor(self, instrument):
         if self.init_shamdor is True:
@@ -123,11 +121,7 @@ class Lab(Instrument):
             self.shamdor.ReadMode=3
             self.shamdor.SingleTrack = (100, 30)
             self.shamdor.AcquisitionMode = 3
-            
-##            set the centre wavelengths up
-#            self.shamdor.ShamrockGetWavelengthLimits()
-#            self.spinbox_centrewl.setRange(self.shamdor.shamrock.wl_limits[0],
-#                                           self.shamdor.shamrock.wl_limits[1])
+   
             self.init_shamdor = True
     def _initiate_aligner(self):
         if self.init_aligner is True:                 
@@ -143,6 +137,15 @@ class Lab(Instrument):
             self.power_wheel = instrument
             self.power_wheel.setPosition(1)
             
+    def get_laser(self):
+        return self.laser
+    
+    def set_laser(self, Laser):
+        self.shamdor.laser = Laser
+        
+    laser = property(get_laser, set_laser)
+    
+    
     def fancy_capture(self):
         '''
         Takes a spectrum on the shamdor, but turns off the white light and turns on the laser first, 
@@ -197,6 +200,9 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.example_pushButton.clicked.connect(self.Lab.example)
         self.modal_example_pushButton.clicked.connect(self.modal_example_gui)
         self.steps_spinBox.valueChanged.connect(self.update_steps)
+        self.use_shifts_checkBox.stateChanged.connect(self.update_use_shifts)
+        self._633_radioButton.clicked.connect(self.update_laser_gui)
+        self._785_radioButton.clicked.connect(self.update_laser_gui)
     def set_power_gui(self):
         self.Lab.power_wheel.setPosition(self.power_wheel_spinBox.value())
     def update_group_name(self):
@@ -205,18 +211,25 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         init_use_cur = datafile._use_current_group
         datafile._use_current_group = False
         self.gui_current_group = self.Lab.create_data_group(self.group_name)
-        if self.use_created_group_checkBox.checkState: 
+        if self.use_created_group_checkBox.checkState(): 
             datafile._current_group = self.gui_current_group
         if init_use_cur: datafile._use_current_group = True
     def update_use_current_group(self):
-        if self.use_created_group_checkBox.checkState:
+        if self.use_created_group_checkBox.checkState():
             datafile._use_current_group = True
             try:datafile._current_group = self.gui_current_group
             except: print('No created group (yet)!')
         else:
             datafile._use_current_group = False  
-
-    
+    def update_use_shifts(self):
+        self.Lab.shamdor.use_shifts = self.use_shifts_checkBox.checkState()
+    def update_laser_gui(self):
+        if self._633_radioButton.isChecked():     
+            self.Lab.laser  = '_633'
+        if self._785_radioButton.isChecked(): 
+            self.Lab.laser = '_785'
+        
+        
     def modal_example_gui(self):
         '''
         running a function modally produces a progress bar, and takes care of threading stuff for you to keep the GUI responsive
