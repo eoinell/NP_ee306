@@ -150,6 +150,7 @@ class Lab(Instrument):
         '''
         wutter_open = self.wutter.is_open()
         lutter_closed = self.lutter.is_closed()
+        
         if wutter_open: self.wutter.close_shutter()
         if lutter_closed: self.lutter.toggle() # toggle is more efficient than open/close
         
