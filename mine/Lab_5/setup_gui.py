@@ -388,14 +388,20 @@ class Lab(Instrument):
         self.CWL.camera.gain = 1
         if self.laser == 785: self.rotate_to(self.minangle)
         if self.laser == 633: self.AOM.Power(1)
-        self.wutter.close_shutter()
-        self.lutter.open_shutter()
+        wstate = self.wutter.get_state()
+        lstate = self.lutter.get_state()
+        if wstate == 'Open': self.wutter.close_shutter()
+        if lstate == 'Closed': self.lutter.toggle()        
         time.sleep(1)
         self.CWL.autofocus(merit_function = laser_merit)
         self.CWL.camera.exposure = initial_exp
         self.CWL.camera.gain = initial_gain 
-        if self.laser == 785: self.rotate_to(initial_angle)
-        if self.laser == 633: self.AOM.Power(initial_voltage)
+        if self.laser == '_785': self.rotate_to(initial_angle)
+        elif self.laser == '_633': self.AOM.Power(initial_voltage)
+        else: print 'Power not restored!'        
+        if wstate == 'Open': self.wutter.open_shutter()
+        if lstate == 'Closed': self.lutter.toggle()
+        
     def get_qt_ui(self):
         return Lab_gui(self)
 

@@ -29,9 +29,9 @@
   <widget class="QPushButton" name="modal_example_pushButton">
    <property name="geometry">
     <rect>
-     <x>300</x>
+     <x>290</x>
      <y>30</y>
-     <width>81</width>
+     <width>91</width>
      <height>21</height>
     </rect>
    </property>
@@ -44,7 +44,7 @@
     <rect>
      <x>380</x>
      <y>30</y>
-     <width>42</width>
+     <width>41</width>
      <height>21</height>
     </rect>
    </property>

@@ -30,6 +30,7 @@ class Lab(Instrument):
         self.wutter.open_shutter()  
         self.steps = 5 
         Instrument.__init__(self) 
+    
     def initiate_all(self, ed):
         
         self.init_spec = False
