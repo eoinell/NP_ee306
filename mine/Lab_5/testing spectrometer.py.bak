@@ -4,7 +4,6 @@ Created on Tue Nov 19 14:59:23 2019
 
 @author: Hera
 """
-from __future__ import print_function
 from nplab.instrument.camera.lumenera import LumeneraCamera
 from nplab.instrument.stage.prior import ProScan
 from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
@@ -41,4 +40,4 @@ def run():
 
 def tr(update_progress = lambda p:p):
     trandor.raw_snapshot()
-    print('done')
+    print 'done'

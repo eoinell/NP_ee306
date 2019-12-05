@@ -2,10 +2,6 @@
 """
 This is a very simple script that pops up a data browser for one file.
 """
-from __future__ import division
-from builtins import str
-from builtins import range
-from past.utils import old_div
 import nplab
 import nplab.datafile
 import nplab.ui.hdf5_browser as browser
@@ -31,9 +27,9 @@ def smooth_spectra(counts_array, wavelength_array, points=9):
         
         smoothed_counts[s] = np.mean(counts_array[i:(i+points)])
         if points%2 == 0:
-            smoothed_wavelengths[s] = wavelength_array[i+(old_div(points,2))]
+            smoothed_wavelengths[s] = wavelength_array[i+(points/2)]
         else:
-            smoothed_wavelengths[s] = wavelength_array[i+(old_div(points,2)) -(old_div(1,2))]  
+            smoothed_wavelengths[s] = wavelength_array[i+(points/2) -(1/2)]  
         i += points
         s+=1
     return smoothed_counts, smoothed_wavelengths  
@@ -104,7 +100,7 @@ if __name__ == "__main__":
         else:
             spectra[i]=oe[name]
         
-        counts = old_div((spectra[i]-bg),(ref-bg))
+        counts = (spectra[i]-bg)/(ref-bg)
         cnts, wl = split_spectrum(counts, wavelengths, 1000, 500)
         smoothed_counts,smoothed_wavelengths = smooth_spectra(cnts, wl)
         plt.figure(1)

@@ -4,11 +4,6 @@ Created on Thu Aug 01 16:38:56 2019
 
 @author: ee306
 """
-from __future__ import division
-from __future__ import print_function
-from builtins import str
-from builtins import range
-from past.utils import old_div
 import sys
 
 import numpy as np
@@ -26,15 +21,13 @@ def laser_merit(im):
     merit = 1
     im = np.sum(im, axis = 2)
     x_len, y_len = np.shape(im)
-    xindices = np.arange(old_div(x_len,2) - 3, old_div(x_len,2) +3)
+    xindices = np.arange(x_len/2 - 3, x_len/2 +3)
     x_slice = np.mean(np.take(im, xindices, axis = 0), axis = 0)
-    spl = UnivariateSpline(list(range(len(x_slice))), x_slice - old_div(max(x_slice),3))
+    spl = UnivariateSpline(range(len(x_slice)), x_slice - max(x_slice)/3)
     roots = spl.roots()
-    try: merit = old_div(1,(max(roots)-min(roots)))
+    try: merit = 1/(max(roots)-min(roots))
     except: merit = 0
     return merit
-
-
 class Lab(Instrument):
     '''
     meta-instrument for all the equipment in Lab 5. Works analogously to CWL in many respects. 
@@ -47,10 +40,10 @@ class Lab(Instrument):
         self.maxangle = 500                  
         #self.anglez = np.linspace(self.minangle , self.maxangle, num = 50, endpoint = True)
         self.anglez = np.logspace(0,np.log10(self.maxangle-self.minangle),50)+self.minangle
-        self.midangle = old_div((self.maxangle - self.minangle),2)
+        self.midangle = (self.maxangle - self.minangle)/2
         self.rotate_to(self.midangle)
         self.voltagez = np.linspace(0,1,num = 50, endpoint = True)        
-        self.midvolt = self.voltagez[old_div(len(self.voltagez),2)]
+        self.midvolt = self.voltagez[len(self.voltagez)/2]
         self.maxvolt = self.voltagez[-1]
         self.maxpower = None 
         self.minpower = None
@@ -65,7 +58,6 @@ class Lab(Instrument):
         Instrument.__init__(self)
 
     def initiate_all(self, ed):
-        
         self.init_spec = False
         self.init_lutter = False
         self.init_FW = False
@@ -76,7 +68,6 @@ class Lab(Instrument):
         self.init_trandor = False
         self.init_aligner = False                
         self.init_AOM = False               
-        
         self._initiate_spectrometer(ed['spec'])
         self._initiate_lutter(ed['lutter'])
         self._initiate_FW(ed['FW'])
@@ -90,26 +81,26 @@ class Lab(Instrument):
 
     def _initiate_spectrometer(self, instrument):
         if self.init_spec is True:        
-            print('Spectrometer already initialised')
+            print 'Spectrometer already initialised'
         else:
             self.spec = instrument
             self.init_spec = True
     def _initiate_lutter(self, instrument):
         if self.init_lutter is True:
-            print('Laser shutter already initialised')
+            print 'Laser shutter already initialised'
         else:
             self.lutter = instrument
             self.lutter.set_mode(1)
             self.init_lutter = True        
     def _initiate_FW(self, instrument):
         if self.init_FW is True:            
-            print('Filter Wheel already initialised')
+            print 'Filter Wheel already initialised'
         else:            
             self.FW = instrument   
             self.init_FW = True
     def _initiate_AOM(self, instrument):
         if self.init_AOM == True:
-            print('AOM already initialised')
+            print 'AOM already initialised'
         else:
             self.AOM = instrument
             self.AOM.Switch_Mode()
@@ -126,7 +117,7 @@ class Lab(Instrument):
             self.AOM.Power(self.maxvolt)
     def _initiate_pometer(self, instrument):
         if self.init_pometer is True:
-            print('Power meter already initialised')
+            print 'Power meter already initialised'
         else:            
             self.pometer = instrument
             self.pometer.system.beeper.immediate()
@@ -135,7 +126,7 @@ class Lab(Instrument):
             self.init_pometer = True
     def _initiate_cam(self, instrument):
         if self.init_cam is True:
-            print('Camera already initalised')
+            print 'Camera already initalised'
         else:
             self.cam = instrument
             self.cam.exposure=800.
@@ -143,14 +134,14 @@ class Lab(Instrument):
             self.init_cam = True
     def _initiate_CWL(self, instrument):
         if self.init_CWL is True:
-            print('Camera with location already initialised')
+            print 'Camera with location already initialised'
         else:
             self.CWL = instrument
             self.CWL.load_calibration()
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
         if self.init_wutter is True :           
-            print('White light shutter already initialised')
+            print 'White light shutter already initialised'
         else:            
             self.wutter = instrument
             self.wutter.close_shutter()            
@@ -234,7 +225,7 @@ class Lab(Instrument):
             group.create_dataset('real_powers',data=powers, attrs = attrs)
         else:
     
-            group.create_dataset('real_powers',data=( old_div(powers*self.measured_power,max(powers))), attrs = attrs)
+            group.create_dataset('real_powers',data=( powers*self.measured_power/max(powers)), attrs = attrs)
         self.lutter.close_shutter()
         self._set_to_midpoint()
         self.wutter.open_shutter()
@@ -244,7 +235,7 @@ class Lab(Instrument):
         power_group = []        
         if self.laser == '_633':        
             try:
-                for key in list(search_in.keys()):
+                for key in search_in.keys():
                     if key[0:21] == 'Power_Calibration_633':       
                         n = 0                
                         while n<50: 
@@ -256,10 +247,10 @@ class Lab(Instrument):
                         power_group.append(int(key[n+1:]))
                 self.power_calibration = search_in['Power_Calibration_633_'+str(max(power_group))]
             except:
-                print('Power calibration not found')
+                print 'Power calibration not found'
         if self.laser == '_785':
             try:
-                for key in list(search_in.keys()):
+                for key in search_in.keys():
                     if key[0:21] == 'Power_Calibration_785':       
                         n = 0                
                         while n<50: 
@@ -271,7 +262,7 @@ class Lab(Instrument):
                         power_group.append(int(key[n+1:]))
                 self.power_calibration = search_in['Power_Calibration_785_'+str(max(power_group))]
             except:
-                print('Power calibration not found')
+                print 'Power calibration not found'
     def Power(self, power):
         if self.laser == '_785':
             self.rotate_to(self.Power_to_Angle(power))
@@ -289,7 +280,7 @@ class Lab(Instrument):
         elif np.absolute(angle-max(self.anglez))<3:
             return max(self.anglez)
         else:
-            print('Error, angle of '+str(angle)+' outside allowed range')
+            print 'Error, angle of '+str(angle)+' outside allowed range'
     def Power_to_Voltage(self, power):
         voltages = self.power_calibration.attrs['Voltages']    
         try:
@@ -301,17 +292,18 @@ class Lab(Instrument):
             if 1<voltage<1.1:
                 return 1.
             else:
-                print('Error, voltage of '+str(voltage)+' outside allowed range')
+                print 'Error, voltage of '+str(voltage)+' outside allowed range'
         except:
-            print('Power Calibration not found')
+            print 'Power Calibration not found'
     def Power_Series(self,
                      tick_this_box = False,
-                     focus_with_laser = False,
+                     focus_with_laser = True,
                      update_progress=lambda p:p):        
         self.update_power_calibration()  # necessary if changed lasers      
-        update_progress(0)
-        if tick_this_box == False:  
-            group = self.create_data_group(self.power_series_name)
+        
+        if tick_this_box == False:
+            self.create_data_group(self.power_series_name)
+            group = datafile._current_group 
         else:
             group = self.wizard.particle_group             
 
@@ -339,15 +331,15 @@ class Lab(Instrument):
         self.lutter.close_shutter()
         self.wutter.open_shutter()
         group.create_dataset('image_before',data = self.CWL.thumb_image())        
-#        self.aligner.optimise(0.003, max_steps=10, stepsize=0.5, npoints=3, dz=0.02,verbose=False)
+        #self.aligner.optimise(0.003, max_steps=10, stepsize=0.5, npoints=3, dz=0.02,verbose=False)
         data = self.aligner.z_scan(dz =np.arange(-0.25,0.25,0.05))   
         group.create_dataset('z_scan_before', data = data, attrs = data.attrs)   
         self.wutter.close_shutter() 
         self.lutter.open_shutter()        
         time.sleep(0.2)    
-        
+
         for index, Power in enumerate(self.Powers):
-            if focus_with_laser == True: self.focus_with_laser()            
+            self.focus_with_laser()            
             attrs['power'] = Power           
             self.lutter.close_shutter()   
             self.wutter.open_shutter() 
@@ -355,10 +347,12 @@ class Lab(Instrument):
             group.create_dataset('spectrum_before_%d', data = self.spec.read())            
             self.wutter.close_shutter()   
             self.lutter.open_shutter()            
-#            
+            
             Captures = []            
-            self.Power(Power)              
+            if self.laser == '_785': self.rotate_to(self.Power_to_Angle(Power))  
+            if self.laser == '_633': self.AOM.Power(self.Power_to_Voltage(Power))              
             time.sleep(0.2)
+            attrs['measured_power'] = self.read_pometer()  
             attrs['measured_power'] = self.read_pometer()  
             nkin = int(kinetic_fac/Power) 
             if nkin<1: nkin = 1
@@ -366,9 +360,12 @@ class Lab(Instrument):
             Captures.append(self.trandor.capture()[0])
             self.lutter.close_shutter()   
             self.wutter.open_shutter()
-            To_Save = []
+            time.sleep(5)            
+           
+
+            To_Save = []            
             for i in Captures:
-                To_Save+=np.reshape(i,[len(i)/1600,1600]).tolist()              
+                To_Save+=np.reshape(i,[len(i)/1600,1600]).tolist()
                 group.create_dataset('power_series_%d',data=To_Save,attrs=attrs)  
             update_progress(index)
         self.lutter.close_shutter()   
@@ -393,20 +390,14 @@ class Lab(Instrument):
         self.CWL.camera.gain = 1
         if self.laser == 785: self.rotate_to(self.minangle)
         if self.laser == 633: self.AOM.Power(1)
-        wstate = self.wutter.get_state()
-        lstate = self.lutter.get_state()
-        if wstate == 'Open': self.wutter.close_shutter()
-        if lstate == 'Closed': self.lutter.toggle()        
+        self.wutter.close_shutter()
+        self.lutter.open_shutter()
         time.sleep(1)
         self.CWL.autofocus(merit_function = laser_merit)
         self.CWL.camera.exposure = initial_exp
         self.CWL.camera.gain = initial_gain 
-        if self.laser == '_785': self.rotate_to(initial_angle)
-        elif self.laser == '_633': self.AOM.Power(initial_voltage)
-        else: print 'Power not restored!'        
-        if wstate == 'Open': self.wutter.open_shutter()
-        if lstate == 'Closed': self.lutter.toggle()
-        
+        if self.laser == 785: self.rotate_to(initial_angle)
+        if self.laser == 633: self.AOM.Power(initial_voltage)
     def get_qt_ui(self):
         return Lab_gui(self)
 
@@ -432,21 +423,21 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.spinBox_max_nkin.setValue(self.Lab.max_nkin)
         self.checkBox_ramp.stateChanged.connect(self.update_ramp)
         self.pushButton_Power_Series.clicked.connect(self.Power_Series_gui)
-        if self.Lab.laser == '_785':
-            self.doubleSpinBox_min_param.setValue(self.Lab.minangle)
-            self.doubleSpinBox_max_param.setValue(self.Lab.maxangle)
-        if self.Lab.laser == '_633':
-            self.doubleSpinBox_min_param.setValue(self.Lab.minvolt)
-            self.doubleSpinBox_max_param.setValue(self.Lab.maxvolt)
         self.doubleSpinBox_min_param.valueChanged.connect(self.update_min_max_params)
-        self.doubleSpinBox_max_param.valueChanged.connect(self.update_min_max_params)    
+        self.doubleSpinBox_max_param.valueChanged.connect(self.update_min_max_params)
+        if self.Lab.laser == '_785':
+            self.doubleSpinBox_min_param.value = self.Lab.minangle
+            self.doubleSpinBox_max_param.value = self.Lab.maxangle
+        if self.Lab.laser == '_633':
+            self.doubleSpinBox_min_param = self.Lab.minvolt 
+            self.doubleSpinBox_max_param.value = self.Lab.maxvolt
+            
         self.pushButton_set_param.clicked.connect(self.set_param)
         self.pushButton_lutter.clicked.connect(self.Lab.lutter.toggle)
         self.pushButton_wutter.clicked.connect(self.Lab.wutter.toggle)
         self.lineEdit_Power_Series_Name.textChanged.connect(self.update_power_series_name)
         self.doubleSpinBox_measured_power.valueChanged.connect(self.update_measured_power)        
         self.pushButton_particletrack.clicked.connect(self.Lab._launch_particle_track)
-    
     def update_power_series_name(self):
         self.power_series_name = self.lineEdit_Power_Series_Name.text() 
     def _select_laser_633(self):
@@ -454,12 +445,12 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
             self.checkBox_785.setChecked(False)
             self.Lab.laser = '_633' 
             self.Lab.pometer.sense.correction.wavelength = 633
-            self.anglez = np.linspace(self.Lab.minangle , self.Lab.maxangle, num = 50, endpoint = True)
+            self.anglez = np.linspace(self.minangle , self.maxangle, num = 50, endpoint = True)
         else:
             self.checkBox_785.setChecked(True)
             self.Lab.laser = '_785'
             self.Lab.pometer.sense.correction.wavelength = 785
-            self.Lab.anglez = np.logspace(0,np.log10(self.Lab.maxangle - self.Lab.minangle),50)+self.Lab.minangle
+            self.Lab.anglez = np.logspace(0,np.log10(self.maxangle - self.minangle),50)+self.minangle
     def _select_laser_785(self):
         if self.checkBox_785.isChecked() == True:       
             self.checkBox_633.setChecked(False)
@@ -493,28 +484,28 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
             self.Lab.maxangle = self.doubleSpinBox_max_param.value()
             self.Lab.anglez = np.logspace(0,np.log10(self.Lab.maxangle-self.Lab.minangle),50)+self.Lab.minangle
             self.Lab.midangle = (self.Lab.maxangle - self.Lab.minangle)/2
-        if self.Lab.laser == '_633':
+        if self.laser == '_633':
             self.Lab.minvolt = self.doubleSpinBox_min_param.value()
             self.Lab.maxvolt = self.doubleSpinBox_max_param.value() 
             if self.maxvolt>1:
-                print('voltages over 1 not allowed!')
+                print 'voltages over 1 not allowed!'
                 self.Lab.maxvolt = 1
             self.Lab.voltagez = np.linspace(0,self.Lab.maxvolt,num = 40, endpoint = True)        
-            self.Lab.midvolt = self.Lab.voltagez[old_div(len(self.Lab.voltagez),2)]
+            self.Lab.midvolt = self.Lab.voltagez[len(self.Lab.voltagez)/2]
     def set_param(self):
         param = self.doubleSpinBox_set_input_param.value()
         if self.Lab.laser == '_785':
             self.Lab.rotate_to(param)
         elif self.Lab.laser == '_633':
             if param>1:
-                print('voltages >1 not allowed!')
+                print 'voltages >1 not allowed!'
                 param = 1
             self.Lab.AOM.Power(param)
    
     def Calibrate_Power_gui(self):
         run_function_modally(self.Lab.Calibrate_Power, progress_maximum = len(self.Lab.anglez) if self.Lab.laser == '785' else len(self.Lab.voltagez))
     def Power_Series_gui(self):
-        run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.ramp == False else self.Lab.steps*2)
+        run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.ramp == True else self.Lab.steps*2)
 
 
 if __name__ == '__main__': 
@@ -537,6 +528,7 @@ if __name__ == '__main__':
     os.chdir(r'C:\Users\00\Documents\ee306')    
     app = QtWidgets.QApplication(sys.argv)    
     rm= visa.ResourceManager()
+    
     spec = OceanOpticsSpectrometer(0) 
     lutter = ThorLabsSC10('COM30')
     FW=[RS.Filter_Wheel()] 

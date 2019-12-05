@@ -36,7 +36,8 @@ class PT_lab(Lab):
         self.wutter.open_shutter()        
         self.lutter.close_shutter()
         return to_save 
-    
+
+        
 if __name__ == '__main__':
     import os
     from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
