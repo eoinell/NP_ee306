@@ -4,7 +4,6 @@ Created on Thu Aug 01 16:38:56 2019
 
 @author: Hera
 """
-from __future__ import print_function
 import sys
 import numpy as np
 import time
@@ -14,8 +13,8 @@ from nplab.ui.ui_tools import UiTools
 from nplab.experiment.gui import run_function_modally
 from nplab.instrument import Instrument
 from nplab.instrument.spectrometer.shamdor import Shamdor
-from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
 from nplab import datafile
+from nplab.utils.notified_property import DumbNotifiedProperty
 import winsound
 
 class Lab(Instrument):
@@ -30,11 +29,9 @@ class Lab(Instrument):
         self.lutter.close_shutter()
         self.wutter.open_shutter()  
         self.steps = 5 
-        self.laser = '_633'
-        Instrument.__init__(self) 
-    
+        Instrument.__init__(self)    
+
     def initiate_all(self, ed):
-        
         self.init_spec = False
         self.init_lutter = False
         self.init_cam = False
@@ -54,17 +51,16 @@ class Lab(Instrument):
         self._initiate_shamdor(ed['shamdor'])
         self._initiate_power_wheel(ed['power_wheel'])
         self._initiate_aligner()
-        
-    
+
     def _initiate_spectrometer(self, instrument):
         if self.init_spec is True:        
-            print('Spectrometer already initialised')
+            print 'Spectrometer already initialised'
         else:
             self.spec = instrument
             self.init_spec = True
     def _initiate_lutter(self, instrument):
         if self.init_lutter is True:
-            print('Laser shutter already initialised')
+            print 'Laser shutter already initialised'
         else:
             self.lutter = instrument
             self.lutter.set_mode(1)
@@ -72,23 +68,22 @@ class Lab(Instrument):
 
     def _initiate_cam(self, instrument):
         if self.init_cam is True:
-            print('Camera already initalised')
+            print 'Camera already initalised'
         else:
             self.cam = instrument
-            self.cam.exposure=200.
+            self.cam.exposure=800.
             self.cam.gain = 20.
             self.init_cam = True
     def _initiate_CWL(self, instrument):
         if self.init_CWL is True:
-            print('Camera with location already initialised')
+            print 'Camera with location already initialised'
         else:
             self.CWL = instrument
-            try: self.CWL.load_calibration()
-            except: print('Stage not XY calibrated')
+            self.CWL.load_calibration()
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
         if self.init_wutter is True :           
-            print('White light shutter already initialised')
+            print 'White light shutter already initialised'
         else:            
             self.wutter = instrument
             self.wutter.close_shutter()            
@@ -96,19 +91,23 @@ class Lab(Instrument):
             self.init_wutter = True
     def _initiate_shamrock(self, instrument):
         if self.init_shamrock is True:
-            print('Shamrock already initialised')
+            print 'Shamrock already initialised'
         else:            
             self.shamrock = instrument             
-            self.shamrock_centre_wl = 650            
+            self.shamrock_centre_wl = 700            
             self.shamrock.HSSpeed=2
             self.shamrock.SetSlit(100)
-            self.shamrock.center_wavelength = 650
+            self.shamrock.center_wavelength = 700
             self.shamrock.pixel_number = 1600
             self.shamrock.pixel_width = 16       
+            
+#            self.shamrock.ShamrockSetPixelWidth(16)
+#            self.shamrock.ShamrockSetNumberPixels(1600)
+#            self.shamrock.ShamrockGetWavelengthLimits()
             self.init_shamrock = True
     def _initiate_shamdor(self, instrument):
         if self.init_shamdor is True:
-            print('shamdor already initialised')
+            print 'shamdor already initialised'
         else:            
             self.shamdor = instrument
  
@@ -122,31 +121,26 @@ class Lab(Instrument):
             self.shamdor.ReadMode=3
             self.shamdor.SingleTrack = (100, 30)
             self.shamdor.AcquisitionMode = 3
-   
+            
+##            set the centre wavelengths up
+#            self.shamdor.ShamrockGetWavelengthLimits()
+#            self.spinbox_centrewl.setRange(self.shamdor.shamrock.wl_limits[0],
+#                                           self.shamdor.shamrock.wl_limits[1])
             self.init_shamdor = True
     def _initiate_aligner(self):
         if self.init_aligner is True:                 
-            print('Spectrometer aligner already initiated')
+            print 'Spectrometer aligner already initiated'
         else:
             
             self.aligner = SpectrometerAligner(self.spec, self.CWL.stage)
             self.init_aligner = True
     def _initiate_power_wheel(self, instrument):
         if self.init_power_wheel is True:
-            print('Power Wheel already initialised')
+            print 'Power Wheel already initialised'
         else:            
             self.power_wheel = instrument
             self.power_wheel.setPosition(1)
             
-    def get_laser(self):
-        return self.laser
-    
-    def set_laser(self, Laser):
-        self.shamdor.laser = Laser
-        
-    laser = property(get_laser, set_laser)
-    
-    
     def fancy_capture(self):
         '''
         Takes a spectrum on the shamdor, but turns off the white light and turns on the laser first, 
@@ -154,7 +148,6 @@ class Lab(Instrument):
         '''
         wutter_open = self.wutter.is_open()
         lutter_closed = self.lutter.is_closed()
-        
         if wutter_open: self.wutter.close_shutter()
         if lutter_closed: self.lutter.toggle() # toggle is more efficient than open/close
         
@@ -165,7 +158,7 @@ class Lab(Instrument):
         if lutter_closed: self.lutter.toggle()
 
     def example(self):
-        print("I'm an example")
+        print "I'm an example"
         winsound.Beep(100,500)
         group = self.create_data_group('example_group')
         group.create_dataset('example', data = [0,1,2,3])
@@ -190,7 +183,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         uic.loadUi(r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\setup_gui.ui', self)
         self.Lab = lab
         self.group_name = 'particle_%d' 
-        self.gui_current_group = None
+        self._current_group = None
         self.SetupSignals()
     def SetupSignals(self): 
         self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
@@ -201,9 +194,6 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.example_pushButton.clicked.connect(self.Lab.example)
         self.modal_example_pushButton.clicked.connect(self.modal_example_gui)
         self.steps_spinBox.valueChanged.connect(self.update_steps)
-        self.use_shifts_checkBox.stateChanged.connect(self.update_use_shifts)
-        self._633_radioButton.clicked.connect(self.update_laser_gui)
-        self._785_radioButton.clicked.connect(self.update_laser_gui)
     def set_power_gui(self):
         self.Lab.power_wheel.setPosition(self.power_wheel_spinBox.value())
     def update_group_name(self):
@@ -212,25 +202,18 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         init_use_cur = datafile._use_current_group
         datafile._use_current_group = False
         self.gui_current_group = self.Lab.create_data_group(self.group_name)
-        if self.use_created_group_checkBox.checkState(): 
+        if self.use_created_group_checkBox.checkState: 
             datafile._current_group = self.gui_current_group
         if init_use_cur: datafile._use_current_group = True
     def update_use_current_group(self):
-        if self.use_created_group_checkBox.checkState():
+        if self.use_created_group_checkBox.checkState:
             datafile._use_current_group = True
             try:datafile._current_group = self.gui_current_group
-            except: print('No created group (yet)!')
+            except: print 'No created group (yet)!'
         else:
             datafile._use_current_group = False  
-    def update_use_shifts(self):
-        self.Lab.shamdor.use_shifts = self.use_shifts_checkBox.checkState()
-    def update_laser_gui(self):
-        if self._633_radioButton.isChecked():     
-            self.Lab.laser  = '_633'
-        if self._785_radioButton.isChecked(): 
-            self.Lab.laser = '_785'
-        
-        
+
+    
     def modal_example_gui(self):
         '''
         running a function modally produces a progress bar, and takes care of threading stuff for you to keep the GUI responsive
@@ -245,10 +228,14 @@ if __name__ == '__main__':
     from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
     from nplab.instrument.camera.lumenera import LumeneraCamera
     from nplab.instrument.camera.camera_with_location import CameraWithLocation
+    from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
     from nplab.instrument.stage.prior import ProScan
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
+    from nplab.instrument.spectrometer.shamrock import Shamrock
+    from nplab.instrument.camera.Andor import Andor
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.stage.Thorlabs_FW212C import FW212C   
+    from particle_tracking_app.particle_tracking_wizard import TrackingWizard
 
     os.chdir(r'C:\Users\np-albali\Documents')       
     spec = OceanOpticsSpectrometer(0) 
@@ -258,7 +245,7 @@ if __name__ == '__main__':
     cam = LumeneraCamera(1)
     stage = ProScan("COM9")
     CWL = CameraWithLocation(cam, stage)
-    shamdor = Shamdor(use_shifts = False)
+    shamdor = Shamdor(Andor)
     filter_wheel = FW212C()
     equipment_dict = {'spectrometer' : spec,
                     'laser_shutter' : lutter,

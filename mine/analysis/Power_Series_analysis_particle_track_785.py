@@ -4,19 +4,26 @@ Created on Mon Aug  5 10:30:06 2019
 
 @author: Eoin Elliott
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
 
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import matplotlib.pyplot as plt
 import os
 import h5py
 import numpy as np
-import misc as ms
-import  conversions as cnv
+from . import misc as ms
+from . import  conversions as cnv
 from nplab.analysis import smoothing as sm
 import time
 import ipdb
 import scipy
 
-from peaks_and_bg_fitting import fullfit 
+from .peaks_and_bg_fitting import fullfit 
 
 plt.rc('font',family='arial', size = 18)
           
@@ -24,7 +31,7 @@ def L(x,H,C,W): # height centre width
     	"""
     	Defines a lorentzian
     	"""
-    	return H/(1.+(((x-C)/W)**2))            
+    	return old_div(H,(1.+((old_div((x-C),W))**2)))            
 
 def fancy_log(x):
     x = np.array(x)
@@ -73,7 +80,7 @@ def condense_power_series(particle, input_shifts, analysis_range):
 
 
 def fit(particle, input_shifts, analysis_range, T_misc = None, T_misc_shifts = None, T_NPoM = True, plot = False, plot_log = False):#shift in cm-1, previously calibrated
-    print 'analysing '+str(particle)
+    print('analysing '+str(particle))
     power_series, powers, measured_powers = condense_power_series(particle, input_shifts, analysis_range) # turn the kinetic power series a single spectrum for each power
     shifts = ms.truncate(input_shifts, input_shifts, *analysis_range)[0]
     
@@ -109,18 +116,18 @@ def fit(particle, input_shifts, analysis_range, T_misc = None, T_misc_shifts = N
     # convert the powers into 2 arrays, up and down. may need another line when max power isn't repeated
     if plot == True: maxes = []
     if plot_log == True: logmaxes = []
-    powers_flipped = np.append(powers[:len(powers)/2 +1], powers[len(powers)/2 +1:][::-1])
-    indices = range(len(powers))
-    indices_flipped = np.append(indices[:len(indices)/2 +1], indices[len(indices)/2 +1:][::-1])
+    powers_flipped = np.append(powers[:old_div(len(powers),2) +1], powers[old_div(len(powers),2) +1:][::-1])
+    indices = list(range(len(powers)))
+    indices_flipped = np.append(indices[:old_div(len(indices),2) +1], indices[old_div(len(indices),2) +1:][::-1])
     # done so the lowest powers fits are done first
     counter = -1
     for index, power in zip(indices_flipped, powers_flipped):
         counter+=1
-        if counter == len(powers)/2 + 1:  
+        if counter == old_div(len(powers),2) + 1:  
             previous_S_fit = None 
             previous_AS_fit = None
         raw_counts = power_series[index]
-        print 'peaks ' + str((counter)*100/(len(powers))) +'% fitted'
+        print('peaks ' + str(old_div((counter)*100,(len(powers)))) +'% fitted')
         #---split the spectrum into Stokes and anti-Stokes
         S_portion, S_shifts = ms.truncate(raw_counts,shifts, notch, np.inf)
         AS_portion, AS_shifts = ms.truncate(raw_counts,shifts, -np.inf, -notch )
@@ -176,10 +183,10 @@ def fit(particle, input_shifts, analysis_range, T_misc = None, T_misc_shifts = N
         
         if plot_log == True and use_exponential == True:
             plt.figure('log fits')  
-            fullcounts = (raw_counts - AS_bg_p[-1])/normfac
+            fullcounts = old_div((raw_counts - AS_bg_p[-1]),normfac)
             plt.plot(shifts, fancy_log(fullcounts), color = plt.cm.plasma_r(power*color_fac), zorder = 1)
             plt.fill_between(S_shifts, fancy_log(S_bg - AS_bg_p[-1]), 0, color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
-            plt.fill_between(AS_shifts, fancy_log((AS_bg - AS_bg_p[-1])/AS_normfac), 0, color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
+            plt.fill_between(AS_shifts, fancy_log(old_div((AS_bg - AS_bg_p[-1]),AS_normfac)), 0, color = 'saddlebrown', alpha = 0.1, linestyle = 'None')
             allpeaks = np.append(Sfit.peaks, ASfit.peaks)
             plt.plot(shifts, fancy_log(full_bg - AS_bg_p[-1] + Sfit.asymm_multi_L(shifts, *allpeaks)), '--', color = 'k', alpha = 0.5, zorder = 1)
             logmaxes.append(max(fullcounts))
@@ -203,7 +210,7 @@ def sort_fits(signals, shifts, S_peaks_stacks, AS_peaks_stacks, AS_bg_ps, powers
             matching_antiStokes_peak_index, stokes_residual = ms.find_closest(-peak[1], np.transpose(AS_peaks_stacks[index])[1])[1:]
             if stokes_residual<20:
                 try:
-                    position_label, dump, label_residual = ms.find_closest(peak[1], peak_labels.keys()) 
+                    position_label, dump, label_residual = ms.find_closest(peak[1], list(peak_labels.keys())) 
                 except:
                     position_label = np.around(peak[1], decimals = 0)
                     label_residual = 0
@@ -264,7 +271,7 @@ def plot_fits(signals, shifts, sorted_fits, powers):
     for index, signal in enumerate(signals):
         plt.plot(shifts, signal, color = plt.cm.plasma_r(powers[index]*colorfac), alpha = 1, zorder = 1)
         biggest_shift = max(sorted_fits.keys())
-    for peak_position, parameters in sorted_fits.items():
+    for peak_position, parameters in list(sorted_fits.items()):
         for index, power in enumerate(parameters[2]):
             Svalues = []
             ASvalues = []
@@ -290,7 +297,7 @@ def plot_linear_bg_fits(signals, shifts, sorted_fits, powers, bgs):
     for index, signal in enumerate(signals):
         plt.plot(shifts, signal+bgs[index], color = plt.cm.plasma_r(powers[index]*colorfac), alpha = 1, zorder = 1)
         biggest_shift = max(sorted_fits.keys())
-    for peak_position, parameters in sorted_fits.items():
+    for peak_position, parameters in list(sorted_fits.items()):
         for index, power in enumerate(parameters[2]):
             plt.plot(parameters[0][6][0][index],parameters[0][6][1][index], color = 'k')
             plt.plot(parameters[1][6][0][index],parameters[1][6][1][index], color = 'k')
@@ -308,7 +315,7 @@ def draw_arrow(powers, normed_data):
         plt.arrow(x,y,dx,dy, color = 'k', width = 0.005)
 
 def plot_power_dependence(sorted_data): # data should be for a given peak - goes Stokes/anti-Stokes, then peak parameters (height, width, area), then powers              
-    for peak_label, data in sorted_data.items():
+    for peak_label, data in list(sorted_data.items()):
         powers = data[2]
         if len(powers)>4:
             plt.figure(str(peak_label)+ ', power_dependence')
@@ -320,11 +327,11 @@ def plot_power_dependence(sorted_data): # data should be for a given peak - goes
 #            plt.plot(powers, data[0][2]/max(data[0][2]), '--o', label = 'Stokes widths')
 #            draw_arrow(powers, data[0][2]/max(data[0][2]))
 #            
-            plt.plot(powers, data[0][3]/max(data[0][3]), '-o', color = 'r', label = 'Stokes areas')
-            draw_arrow(powers, data[0][3]/max(data[0][3]))
+            plt.plot(powers, old_div(data[0][3],max(data[0][3])), '-o', color = 'r', label = 'Stokes areas')
+            draw_arrow(powers, old_div(data[0][3],max(data[0][3])))
             
-            plt.plot(powers, data[0][4]/max(data[0][4]), '--o', color = 'r', label = 'Stokes summed counts')
-            draw_arrow(powers, data[0][4]/max(data[0][4]))
+            plt.plot(powers, old_div(data[0][4],max(data[0][4])), '--o', color = 'r', label = 'Stokes summed counts')
+            draw_arrow(powers, old_div(data[0][4],max(data[0][4])))
             
 #            plt.plot(powers, data[1][0]/max(data[1][0]), '--o', label = 'Anti-Stokes heights')
 #            draw_arrow(powers, data[1][0]/max(data[1][0]))
@@ -332,11 +339,11 @@ def plot_power_dependence(sorted_data): # data should be for a given peak - goes
 #            plt.plot(powers, data[1][2]/max(data[1][2]), '--o', label = 'Anti-Stokes widths')
 #            draw_arrow(powers, data[1][2]/max(data[1][2]))
 #            
-            plt.plot(powers, data[1][3]/max(data[1][3]), '-o', color = 'b', label = 'Anti-Stokes areas')
-            draw_arrow(powers, data[1][3]/max(data[1][3]))
+            plt.plot(powers, old_div(data[1][3],max(data[1][3])), '-o', color = 'b', label = 'Anti-Stokes areas')
+            draw_arrow(powers, old_div(data[1][3],max(data[1][3])))
             
-            plt.plot(powers, data[1][4]/max(data[1][4]), '--o', color = 'b', label = 'Anti-Stokes summed counts')
-            draw_arrow(powers, data[1][4]/max(data[1][4]))
+            plt.plot(powers, old_div(data[1][4],max(data[1][4])), '--o', color = 'b', label = 'Anti-Stokes summed counts')
+            draw_arrow(powers, old_div(data[1][4],max(data[1][4])))
            
             plt.xlabel('Power on sample (mW)')
             plt.ylabel('normalised intensity')
@@ -347,7 +354,7 @@ def plot_temperature(sorted_data): #all peaks
     
     plt.figure('peak temperatures')
     
-    peak_labels = [key for key in sorted_data.keys()]
+    peak_labels = [key for key in list(sorted_data.keys())]
     
     peak_labels.sort()
     plabels = []
@@ -382,12 +389,12 @@ def compare_powers(particle, input_shifts, analysis_range):
     power_series, powers, measured_powers = condense_power_series(particle, input_shifts, analysis_range)
     extracted_powers = ms.get_laser_power_from_leak(power_series, input_shifts)
     plt.figure('laser power from leak')
-    plt.plot(powers, extracted_powers/max(extracted_powers), label = 'laser leak')
-    draw_arrow(powers, extracted_powers/max(extracted_powers))
+    plt.plot(powers, old_div(extracted_powers,max(extracted_powers)), label = 'laser leak')
+    draw_arrow(powers, old_div(extracted_powers,max(extracted_powers)))
     
     corrected_measured_powers = np.append(measured_powers[1:], measured_powers[1])
-    plt.plot(powers, corrected_measured_powers/max(corrected_measured_powers), label = 'powermeter')
-    draw_arrow(powers, corrected_measured_powers/max(corrected_measured_powers))
+    plt.plot(powers, old_div(corrected_measured_powers,max(corrected_measured_powers)), label = 'powermeter')
+    draw_arrow(powers, old_div(corrected_measured_powers,max(corrected_measured_powers)))
     plt.ylabel('normalised power extracted from laser')
     plt.xlabel('target power (mW)')
     plt.legend()
@@ -411,7 +418,7 @@ def analyse_particle(particle, shifts, T_misc, T_misc_shifts, analysis_range):
     return sorted_fits, AS_temperature, signals
 
 def produce_h5_summmary(scan, of, shifts, T_misc, T_misc_shifts, analysis_range):
-    for particle_name, particle in scan.items():
+    for particle_name, particle in list(scan.items()):
         particle_number = int(particle_name[9:])
         if particle_number not in np.arange(108,len(scan)+1).tolist():
             group = of.require_group(particle_name)
@@ -419,7 +426,7 @@ def produce_h5_summmary(scan, of, shifts, T_misc, T_misc_shifts, analysis_range)
             try: sorted_fits, AS_temperature, signals = analyse_particle(particle, shifts, T_misc, T_misc_shifts, analysis_range)
             except: failed_particles.append(str(particle.name))
     
-            for peak_label, peak in sorted_fits.items():
+            for peak_label, peak in list(sorted_fits.items()):
                 peak_group = group.require_group(str(peak_label) + ' data')
                 for n, SaSP in enumerate(peak):
                     if n==2:
@@ -459,7 +466,7 @@ if __name__ == '__main__':
         analyse_particle(scan['Particle_7'], calibrated_shifts, T_misc, T_misc_shifts, analysis_range)        
         
     end = time.time()
-    print 'That took '+str(np.round(end - start))+ 'seconds'
+    print('That took '+str(np.round(end - start))+ 'seconds')
     
     
     

@@ -4,7 +4,6 @@ Created on Sun May 26 11:38:08 2019
 
 @author: np-albali
 """
-from __future__ import print_function
 
 import os
 import nplab
@@ -27,10 +26,10 @@ def findH5File(rootDir, mostRecent = False, nameFormat = 'date'):
     if nameFormat == 'date':
 
         if mostRecent == True:
-            print('Searching for most recent instance of yyyy-mm-dd.h5 or similar...')
+            print 'Searching for most recent instance of yyyy-mm-dd.h5 or similar...'
 
         else:
-            print('Searching for oldest instance of yyyy-mm-dd.h5 or similar...')
+            print 'Searching for oldest instance of yyyy-mm-dd.h5 or similar...'
 
         h5File = sorted([i for i in os.listdir('.') if re.match('\d\d\d\d-[01]\d-[0123]\d', i[:10])
                          and (i.endswith('.h5') or i.endswith('.hdf5'))],
@@ -39,16 +38,16 @@ def findH5File(rootDir, mostRecent = False, nameFormat = 'date'):
     else:
 
         if mostRecent == True:
-            print('Searching for most recent instance of %s.h5 or similar...' % nameFormat)
+            print 'Searching for most recent instance of %s.h5 or similar...' % nameFormat
 
         else:
-            print('Searching for oldest instance of %s.h5 or similar...' % nameFormat)
+            print 'Searching for oldest instance of %s.h5 or similar...' % nameFormat
 
         h5File = sorted([i for i in os.listdir('.') if i.startswith(nameFormat)
                          and (i.endswith('.h5') or i.endswith('.hdf5'))],
                         key = lambda i: os.path.getmtime(i))[n]
 
-    print('\tH5 file %s found\n' % h5File)
+    print '\tH5 file %s found\n' % h5File
 
     return h5File
 filename = findH5File(os.getcwd())

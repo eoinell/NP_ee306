@@ -4,8 +4,6 @@ Created on Wed Jun  5 11:10:25 2019
 
 @author: Eoin Elliott
 """
-from __future__ import division
-from past.utils import old_div
 import matplotlib.pyplot as plt
 import re
 import os
@@ -19,15 +17,15 @@ from lmfit import Minimizer, Parameters#, report_fit
 plt.rc('font',family='arial')
 
 def wavelength_to_omega(wavelengths, centre_wl = 633): # wl in nm
-    omega = 2*np.pi*scipy.constants.c*(old_div(1,(wavelengths*1e-9)) - old_div(1,(centre_wl*1e-9)))
+    omega = 2*np.pi*scipy.constants.c*(1/(wavelengths*1e-9) - 1/(centre_wl*1e-9))
     return omega
 def exponential(omega,A,T): # work in omega, simple exponential
     
         #return A*(np.exp((scipy.constants.hbar/scipy.constants.k)*omega/T) -1)**-1 +bg # x is omega
-        return A*np.exp(old_div((old_div(-scipy.constants.hbar,scipy.constants.k))*omega,T))
+        return A*np.exp((-scipy.constants.hbar/scipy.constants.k)*omega/T)
 def exponential2(omega,A,T): # work in omega, simple exponential
     
-        return A*(np.exp(old_div((old_div(scipy.constants.hbar,scipy.constants.k))*omega,T)) -1)**-1  # x is omega
+        return A*(np.exp((scipy.constants.hbar/scipy.constants.k)*omega/T) -1)**-1  # x is omega
         r#eturn A*np.exp((-scipy.constants.hbar/scipy.constants.k)*omega/T)   
 
 omega_array = np.linspace(wavelength_to_omega(615), wavelength_to_omega(590), num = 50)
