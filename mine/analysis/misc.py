@@ -20,8 +20,8 @@ import numpy as np
 import scipy 
 from . import conversions as cnv
 from lmfit import Minimizer
-from nplab.analysis import Adaptive_Polynomial as AP
-from nplab.analysis import Auto_Fit_Raman as AFR
+from nplab.analysis.background_removal import Adaptive_Polynomial as AP
+from nplab.analysis.SERS_Fitting import Auto_Fit_Raman as AFR
 import matplotlib.pyplot as plt
 from nplab.analysis import smoothing as sm
 
