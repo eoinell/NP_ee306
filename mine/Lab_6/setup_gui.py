@@ -34,7 +34,6 @@ class Lab(Instrument):
         Instrument.__init__(self) 
     
     def initiate_all(self, ed):
-        
         self.init_spec = False
         self.init_lutter = False
         self.init_cam = False
@@ -54,14 +53,14 @@ class Lab(Instrument):
         self._initiate_shamdor(ed['shamdor'])
         self._initiate_power_wheel(ed['power_wheel'])
         self._initiate_aligner()
-        
-    
+
     def _initiate_spectrometer(self, instrument):
         if self.init_spec is True:        
             print('Spectrometer already initialised')
         else:
             self.spec = instrument
             self.init_spec = True
+            
     def _initiate_lutter(self, instrument):
         if self.init_lutter is True:
             print('Laser shutter already initialised')
