@@ -20,5 +20,3 @@ if __name__ == '__main__':
     stage = ProScan("COM9")
     CWL = CameraWithLocation(cam, stage)
     CWL.show_gui(blocking = False)
-        
-        
