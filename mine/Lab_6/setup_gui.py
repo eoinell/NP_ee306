@@ -94,6 +94,7 @@ class Lab(Instrument):
             self.wutter.open_shutter()
             self.init_wutter = True
     def _initiate_shamrock(self, instrument):
+        
         if self.init_shamrock is True:
             print('Shamrock already initialised')
         else:            
@@ -103,7 +104,7 @@ class Lab(Instrument):
             self.shamrock.SetSlit(100)
             self.shamrock.center_wavelength = 650
             self.shamrock.pixel_number = 1600
-            self.shamrock.pixel_width = 16       
+            self.shamrock.pixel_width = 16
             self.init_shamrock = True
     def _initiate_shamdor(self, instrument):
         if self.init_shamdor is True:
