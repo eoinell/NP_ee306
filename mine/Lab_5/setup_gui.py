@@ -288,27 +288,13 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def SetupSignals(self):
         self.checkBox_633.stateChanged.connect(self._select_laser_633)
         self.checkBox_785.stateChanged.connect(self._select_laser_785)
-        self.checkBox_785.setChecked(True)                
-        self.pushButton_set_trandor_centre_wl.clicked.connect(self.set_trandor_centre_wl)        
-        self.doubleSpinBox_exposure.valueChanged.connect(self.update_exposure)
-        self.pushButton_set_slit.clicked.connect(self.set_slit)        
+        self.checkBox_785.setChecked(True)                   
         self.spinBox_steps.valueChanged.connect(self.update_steps)
         self.spinBox_max_nkin.valueChanged.connect(self.update_nkin)
         self.spinBox_max_nkin.setValue(self.Lab.max_nkin)
         self.checkBox_ramp.stateChanged.connect(self.update_ramp)
         self.pushButton_Power_Series.clicked.connect(self.Power_Series_gui)
-        self.doubleSpinBox_min_param.valueChanged.connect(self.update_min_max_params)
-        self.doubleSpinBox_max_param.valueChanged.connect(self.update_min_max_params)
-        if self.Lab.laser == '_785':
-            self.doubleSpinBox_min_param.value = self.Lab.minangle
-            self.doubleSpinBox_max_param.value = self.Lab.maxangle
-        if self.Lab.laser == '_633':
-            self.doubleSpinBox_min_param = self.Lab.minvolt 
-            self.doubleSpinBox_max_param.value = self.Lab.maxvolt
-            
-        self.pushButton_set_param.clicked.connect(self.set_param)
-        self.pushButton_lutter.clicked.connect(self.Lab.lutter.toggle)
-        self.pushButton_wutter.clicked.connect(self.Lab.wutter.toggle)
+    
         self.lineEdit_Power_Series_Name.textChanged.connect(self.update_power_series_name)
         self.doubleSpinBox_measured_power.valueChanged.connect(self.update_measured_power)        
         self.pushButton_particletrack.clicked.connect(self.Lab._launch_particle_track)
@@ -401,8 +387,12 @@ if __name__ == '__main__':
                          'spec': spec, 
                          'cam': cam, 
                          'CWL': CWL, 
-                         'trandor': trandor
-                         'power_control' : lab.pc}    
+                         'andor': trandor,
+                         'triax': trandor.triax,
+                         'power_control' : lab.pc,
+                         'power_meter' : pometer,
+                         'lutter' : lutter,
+                         'wutter' : wutter}
     
     File = datafile.current()
     gui = GuiGenerator(gui_equipment_dict,
