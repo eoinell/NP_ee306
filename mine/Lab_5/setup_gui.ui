@@ -42,69 +42,11 @@
     <string>Enter Power Series name here</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_set_midpoint">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>20</y>
-     <width>121</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Set power to midpoint</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_calibrate_power">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>30</y>
-     <width>91</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Calibrate Power</string>
-   </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="doubleSpinBox_exposure">
-   <property name="geometry">
-    <rect>
-     <x>420</x>
-     <y>60</y>
-     <width>62</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="minimum">
-    <double>0.000000000000000</double>
-   </property>
-   <property name="maximum">
-    <double>1000.000000000000000</double>
-   </property>
-   <property name="value">
-    <double>10.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>410</x>
-     <y>40</y>
-     <width>131</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Trandor exposure</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButton_lutter">
    <property name="geometry">
     <rect>
-     <x>180</x>
-     <y>160</y>
+     <x>250</x>
+     <y>40</y>
      <width>141</width>
      <height>23</height>
     </rect>
@@ -116,8 +58,8 @@
   <widget class="QPushButton" name="pushButton_wutter">
    <property name="geometry">
     <rect>
-     <x>180</x>
-     <y>180</y>
+     <x>250</x>
+     <y>60</y>
      <width>141</width>
      <height>23</height>
     </rect>
@@ -126,59 +68,11 @@
     <string>Toggle white light shutter</string>
    </property>
   </widget>
-  <widget class="QDoubleSpinBox" name="doubleSpinBox_measured_power">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>30</y>
-     <width>62</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="decimals">
-    <number>3</number>
-   </property>
-   <property name="maximum">
-    <double>100.989999999999995</double>
-   </property>
-   <property name="singleStep">
-    <double>0.010000000000000</double>
-   </property>
-   <property name="value">
-    <double>1.010000000000000</double>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>120</x>
-     <y>0</y>
-     <width>151</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Measured power at maxpoint</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_set_maxpoint">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>40</y>
-     <width>121</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Set power to maxpoint</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButton_particletrack">
    <property name="geometry">
     <rect>
-     <x>180</x>
-     <y>210</y>
+     <x>250</x>
+     <y>120</y>
      <width>141</width>
      <height>23</height>
     </rect>
@@ -190,8 +84,8 @@
   <widget class="QCheckBox" name="checkBox_633">
    <property name="geometry">
     <rect>
-     <x>330</x>
-     <y>30</y>
+     <x>10</x>
+     <y>50</y>
      <width>70</width>
      <height>17</height>
     </rect>
@@ -203,8 +97,8 @@
   <widget class="QCheckBox" name="checkBox_785">
    <property name="geometry">
     <rect>
-     <x>330</x>
-     <y>50</y>
+     <x>10</x>
+     <y>70</y>
      <width>70</width>
      <height>17</height>
     </rect>
@@ -219,8 +113,8 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>410</x>
-     <y>20</y>
+     <x>120</x>
+     <y>30</y>
      <width>62</width>
      <height>22</height>
     </rect>
@@ -241,8 +135,8 @@
   <widget class="QLabel" name="label_4">
    <property name="geometry">
     <rect>
-     <x>390</x>
-     <y>0</y>
+     <x>100</x>
+     <y>10</y>
      <width>151</width>
      <height>31</height>
     </rect>
@@ -254,8 +148,8 @@
   <widget class="QPushButton" name="pushButton_set_trandor_centre_wl">
    <property name="geometry">
     <rect>
-     <x>470</x>
-     <y>20</y>
+     <x>180</x>
+     <y>30</y>
      <width>31</width>
      <height>23</height>
     </rect>
@@ -329,7 +223,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>ramp</string>
+    <string>loop down</string>
    </property>
   </widget>
   <widget class="QDoubleSpinBox" name="doubleSpinBox_minpower">
@@ -368,8 +262,8 @@
   <widget class="QDoubleSpinBox" name="doubleSpinBox_slit">
    <property name="geometry">
     <rect>
-     <x>420</x>
-     <y>90</y>
+     <x>130</x>
+     <y>60</y>
      <width>62</width>
      <height>22</height>
     </rect>
@@ -390,8 +284,8 @@
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>400</x>
-     <y>90</y>
+     <x>110</x>
+     <y>60</y>
      <width>16</width>
      <height>21</height>
     </rect>
@@ -400,95 +294,11 @@
     <string>slit</string>
    </property>
   </widget>
-  <widget class="QDoubleSpinBox" name="doubleSpinBox_set_input_param">
-   <property name="geometry">
-    <rect>
-     <x>160</x>
-     <y>80</y>
-     <width>62</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="maximum">
-    <double>800.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_8">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>50</y>
-     <width>151</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Angle/voltage</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_set_param">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>80</y>
-     <width>31</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Set</string>
-   </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="doubleSpinBox_min_param">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>80</y>
-     <width>62</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="decimals">
-    <number>1</number>
-   </property>
-   <property name="maximum">
-    <double>800.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="doubleSpinBox_max_param">
-   <property name="geometry">
-    <rect>
-     <x>80</x>
-     <y>80</y>
-     <width>62</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="decimals">
-    <number>1</number>
-   </property>
-   <property name="maximum">
-    <double>800.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_9">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>60</y>
-     <width>151</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>min-max angle/voltage</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButton_set_slit">
    <property name="geometry">
     <rect>
-     <x>480</x>
-     <y>90</y>
+     <x>190</x>
+     <y>60</y>
      <width>31</width>
      <height>23</height>
     </rect>
@@ -498,20 +308,12 @@
    </property>
   </widget>
   <zorder>label_7</zorder>
-  <zorder>label_9</zorder>
   <zorder>label_6</zorder>
-  <zorder>label</zorder>
   <zorder>label_4</zorder>
   <zorder>pushButton_Power_Series</zorder>
   <zorder>lineEdit_Power_Series_Name</zorder>
-  <zorder>pushButton_set_midpoint</zorder>
-  <zorder>pushButton_calibrate_power</zorder>
-  <zorder>doubleSpinBox_exposure</zorder>
   <zorder>pushButton_lutter</zorder>
   <zorder>pushButton_wutter</zorder>
-  <zorder>doubleSpinBox_measured_power</zorder>
-  <zorder>label_2</zorder>
-  <zorder>pushButton_set_maxpoint</zorder>
   <zorder>pushButton_particletrack</zorder>
   <zorder>checkBox_633</zorder>
   <zorder>checkBox_785</zorder>
@@ -525,11 +327,6 @@
   <zorder>doubleSpinBox_minpower</zorder>
   <zorder>doubleSpinBox_maxpower</zorder>
   <zorder>doubleSpinBox_slit</zorder>
-  <zorder>doubleSpinBox_set_input_param</zorder>
-  <zorder>label_8</zorder>
-  <zorder>pushButton_set_param</zorder>
-  <zorder>doubleSpinBox_min_param</zorder>
-  <zorder>doubleSpinBox_max_param</zorder>
   <zorder>pushButton_set_slit</zorder>
  </widget>
  <resources/>
