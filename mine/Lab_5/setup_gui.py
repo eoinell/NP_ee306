@@ -347,9 +347,8 @@ if __name__ == '__main__':
     from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
     from nplab.instrument.stage.prior import ProScan
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
-    from nplab import datafile
     from nplab.instrument.electronics.ThorlabPM100_powermeter import ThorPM100
-    import Rotation_Stage as RS
+    from Rotation_Stage import Filter_Wheel
     import AOM
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.spectrometer.Triax.Trandor_Lab5 import Trandor
@@ -362,7 +361,7 @@ if __name__ == '__main__':
     
     lutter = ThorLabsSC10('COM30')
     lutter.set_mode(1)
-    FW= RS.Filter_Wheel() 
+    FW= Filter_Wheel() 
     aom = AOM.AOM()
     pometer = ThorPM100(address = 'USB0::0x1313::0x807B::17121118::INSTR')
     wutter = Uniblitz("COM8")
@@ -393,8 +392,6 @@ if __name__ == '__main__':
                          'power_meter' : pometer,
                          'lutter' : lutter,
                          'wutter' : wutter}
-    
-    File = datafile.current()
     gui = GuiGenerator(gui_equipment_dict,
                        dock_settings_path = r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5\config.npy',
                        scripts_path= r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5')

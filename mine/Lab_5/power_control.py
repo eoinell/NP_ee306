@@ -231,15 +231,14 @@ if __name__ == '__main__':
     import os
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
     from mine.Lab_5.thorlabs_pm1000 import Thorlabs_powermeter
-    import Rotation_Stage as RS
+    from Rotation_Stage import Filter_Wheel
     import AOM
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
-   
 
     os.chdir(r'C:\Users\00\Documents\ee306')    
    
     lutter = ThorLabsSC10('COM30')
-    FW = RS.Filter_Wheel() 
+    FW = Filter_Wheel() 
     lutter.set_mode(1)
     aom = AOM.AOM()
     aom.Switch_Mode()
