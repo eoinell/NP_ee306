@@ -31,7 +31,7 @@ def laser_merit(im):
 
 class PowerControl(Instrument):
     '''
-    meta-instrument for all the equipment in Lab 5. Works analogously to CWL in many respects. 
+    Controls the power
     '''
     def __init__(self, power_controller, white_light_shutter, laser_shutter, power_meter):       
         self.pc = power_controller        
