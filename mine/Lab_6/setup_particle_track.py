@@ -30,7 +30,7 @@ class PT_lab(Lab):
         self.wutter.close_shutter()        
         self.lutter.open_shutter()
         time.sleep(0.2)    
-        dump, to_save = self.shamdor.raw_snapshot()
+        to_save = self.shamdor.raw_snapshot()[-1:]
         to_save.attrs['x_axis'] = self.shamdor.x_axis
         to_save.attrs['wavelengths'] = self.shamdor.x_axis
         self.wutter.open_shutter()        
@@ -73,7 +73,7 @@ if __name__ == '__main__':
                 'shamrock' : shamdor.shamrock,
                 'shamdor' : shamdor,
                 'power_wheel' : filter_wheel}
-    lab = PT_lab(lab_dict)    
+    lab = PT_lab(lab_dict)
     
     #=================================================#
     
