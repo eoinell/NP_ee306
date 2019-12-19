@@ -35,31 +35,30 @@ class PowerControl(Instrument):
     '''
     def __init__(self, power_controller, white_light_shutter, laser_shutter, power_meter):       
         self.pc = power_controller        
-        if isinstance(self.pc, 'AOM'):
+        if isinstance(self.pc, AOM.AOM):
             self.laser = '_633'
             self._633 = True
             self._785 = False
             self.min_param = 0
             self.max_param = 1
-        elif isinstance(self.pc, 'Filter_Wheel'):
+        elif isinstance(self.pc, RS.Filter_Wheel):
             self.laser = '_785'
             self._633 = False
             self._785 = True
             self.min_param = 260
             self.max_param = 500                  
             
-        
-        self.go_to(self.mid_param)
-        
+        self.param = self.mid_param
         self.maxpower = None 
         self.minpower = None
+        self.measured_power = None
         self.update_power_calibration()
         self.wutter = white_light_shutter        
         self.lutter = laser_shutter        
         self.lutter.close_shutter()
         
         self.wutter.open_shutter()  
-        super(PowerControl, self).__init__(self)
+        super(PowerControl, self).__init__()
         self._initiate_pc()
         self.pometer = power_meter
   
@@ -87,28 +86,25 @@ class PowerControl(Instrument):
             return self.pc.Get_Power()               
     @param.setter
     def param(self,value):
-        if self.__785:        
+        if self._785:        
             self.pc.Stage.Rotate_To(value)     
-            self.param = value
         if self._633:
             self.pc.Power(value) 
     @property
     def mid_param(self):
         return (self.max_param - self.min_param)/2
-    @property
-    def max_param(self):
-        return (self.max_param - self.min_param)/2
+
     @property
     def points(self):
         if self._785:        
-            return np.logspace(0,np.log10(self.maxangle-self.minangle),50)+self.minangle
+            return np.logspace(0,np.log10(self.max_param-self.min_param),50)+self.min_param
         if self._633:
-            return np.linspace(0,1,num = 50, endpoint = True) 
+            return np.linspace(self.min_param,self.max_param,num = 50, endpoint = True) 
             
     def Calibrate_Power(self, update_progress=lambda p:p):# Power in mW, measured at maxpoint in FW
         #if you don't want to use a seperate power meter, set Measured_Power = False
         attrs = {}       
-        attrs['Measured power at maxpoint'] = self.measured_power
+        if self.measured_power is not None: attrs['Measured power at maxpoint'] = self.measured_power
         if self.laser == '_785':
             attrs['Angles']  = self.points  
             attrs['wavelengths'] = self.points   
@@ -141,10 +137,18 @@ class PowerControl(Instrument):
         if laser is None:
            laser = self.laser 
         search_in = self.get_root_data_folder()
-        self.power_calibration = max([(int(name.split('_')[-1]), group)\
-        for name, group in search_in.keys() \
-        if name.startswith('Power_Calibration') and\
-        name.split('_')[-1] !=  laser[1:]])[-1]
+        print search_in
+        for name in search_in.keys():
+            print name
+            print name.startswith('Power_Calibration')
+            print name.split('_')[-1] 
+            print laser[1:]
+        try: 
+            self.power_calibration = max([(int(name.split('_')[-1]), group)\
+            for name, group in search_in.values() \
+            if name.startswith('Power_Calibration') and\
+            name.split('_')[-1] !=  laser[1:]])[-1]
+        except: ValueError, 'Power Calibration not found'
     def Power(self, power):
         if self.laser == '_785':
             self.rotate_to(self.Power_to_Angle(power))
@@ -192,119 +196,65 @@ class PowerControl(Instrument):
 
 class PowerControl_UI(QtWidgets.QWidget,UiTools):
     def __init__(self, PC):
-        super(Lab_gui, self).__init__()
-        uic.loadUi(r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5\setup_gui.ui', self)
+        super(PowerControl_UI, self).__init__()
+        uic.loadUi(os.path.join(os.path.dirname(__file__), 'power_control.ui'), self)
         self.PC = PC         
         self.SetupSignals()
         
     def SetupSignals(self):
-        self.pushButton_set_midpoint.clicked.connect(self.Lab._set_to_midpoint)
-        self.pushButton_set_maxpoint.clicked.connect(self.Lab._set_to_maxpoint)
-        self.pushButton_calibrate_power.clicked.connect(self.Calibrate_Power_gui)
-        self.checkBox_633.stateChanged.connect(self._select_laser_633)
-        self.checkBox_785.stateChanged.connect(self._select_laser_785)
-        self.checkBox_785.setChecked(True)                
+        self.pushButton_set_midpoint.clicked.connect(self.PC._set_to_midpoint)
+        self.pushButton_set_maxpoint.clicked.connect(self.PC._set_to_maxpoint)
+        self.pushButton_calibrate_power.clicked.connect(self.Calibrate_Power_gui)             
+        self.doubleSpinBox_min_param.setValue(self.PC.min_param)
+        self.doubleSpinBox_max_param.setValue(self.PC.max_param)
+        self.doubleSpinBox_max_param.valueChanged.connect(self.update_min_max_params)  
         self.doubleSpinBox_min_param.valueChanged.connect(self.update_min_max_params)
-        self.doubleSpinBox_max_param.valueChanged.connect(self.update_min_max_params)
-        if self.Lab.laser == '_785':
-            self.doubleSpinBox_min_param.value = self.Lab.minangle
-            self.doubleSpinBox_max_param.value = self.Lab.maxangle
-        if self.Lab.laser == '_633':
-            self.doubleSpinBox_min_param = self.Lab.minvolt 
-            self.doubleSpinBox_max_param.value = self.Lab.maxvolt
-            
+        self.laser_textBrowser.setPlainText('Laser: '+self.PC.laser[1:])    
         self.pushButton_set_param.clicked.connect(self.set_param)
         self.doubleSpinBox_measured_power.valueChanged.connect(self.update_measured_power)        
      
 
     def update_min_max_params(self):
-        self.Lab.power_control.min_param = self.doubleSpinBox_min_param.value()
-        self.Lab.power_control.max_param = self.doubleSpinBox_max_param.value()
+        self.PC.min_param = self.doubleSpinBox_min_param.value()
+        self.PC.max_param = self.doubleSpinBox_max_param.value()
         
         
-        if self.laser == '_633':
-            self.Lab.minvolt = self.doubleSpinBox_min_param.value()
-            self.Lab.maxvolt = self.doubleSpinBox_max_param.value() 
-            if self.maxvolt>1:
-                print 'voltages over 1 not allowed!'
-                self.Lab.maxvolt = 1
-            self.Lab.voltagez = np.linspace(0,self.Lab.maxvolt,num = 40, endpoint = True)        
-            self.Lab.midvolt = self.Lab.voltagez[len(self.Lab.voltagez)/2]
+        if self.PC.laser == '_633' and self.PC.max_param>1:
+            print 'voltages over 1 not allowed!'
+            self.PC.maxvolt = 1
+    def update_measured_power(self):
+        self.PC.measured_power = float(self.doubleSpinBox_measured_power.value())
     def set_param(self):
-        param = self.doubleSpinBox_set_input_param.value()
-        if self.Lab.laser == '_785':
-            self.Lab.rotate_to(param)
-        elif self.Lab.laser == '_633':
-            if param>1:
-                print 'voltages >1 not allowed!'
-                param = 1
-            self.Lab.AOM.Power(param)
+        if self.PC._633 and self.param.value()>1:       
+            self.PC.param = 1
+        else:
+            self.PC.param = self.param.value()
    
     def Calibrate_Power_gui(self):
-        run_function_modally(self.Lab.Calibrate_Power, progress_maximum = len(self.Lab.anglez) if self.Lab.laser == '785' else len(self.Lab.voltagez))
+        run_function_modally(self.PC.Calibrate_Power, progress_maximum = len(self.PC.points))
     
 
 
 if __name__ == '__main__': 
     import os
-    import visa
-    from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
-    from nplab.instrument.camera.lumenera import LumeneraCamera
-    from nplab.instrument.camera.camera_with_location import CameraWithLocation
-    from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
-    from nplab.instrument.stage.prior import ProScan
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
-    from nplab import datafile
-    from ThorlabsPM100.ThorlabsPM100 import ThorlabsPM100
+    from mine.Lab_5.thorlabs_pm1000 import Thorlabs_powermeter
     import Rotation_Stage as RS
     import AOM
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
-    from nplab.instrument.spectrometer.Triax.Trandor_Lab5 import Trandor
-    from particle_tracking_app.particle_tracking_wizard import TrackingWizard
+   
 
     os.chdir(r'C:\Users\00\Documents\ee306')    
-    app = QtWidgets.QApplication(sys.argv)    
-    rm= visa.ResourceManager()
-    
-    spec = OceanOpticsSpectrometer(0) 
+   
     lutter = ThorLabsSC10('COM30')
     FW = RS.Filter_Wheel() 
     lutter.set_mode(1)
     aom = AOM.AOM()
     aom.Switch_Mode()
     aom.Power(0.95)
-    inst = rm.open_resource('USB0::0x1313::0x807B::17121118::INSTR',timeout=1)
-    pometer = ThorlabsPM100(inst=inst)
+    pometer = Thorlabs_powermeter()
     wutter = Uniblitz("COM8")
-    cam = LumeneraCamera(1)
-    
-    stage = ProScan("COM32",hardware_version=2)
-    CWL = CameraWithLocation(cam, stage)
-    
-    trandor=Trandor()
-    
-    equipment_dict = {'spec' : spec,
-                    'lutter' : lutter,
-                    'FW' : FW,
-                    'AOM' : aom,
-                    'pometer' : pometer,
-                    'wutter' : wutter,
-                    'cam' : cam,
-                    'CWL' : CWL,
-                    'trandor' : trandor}
-    lab = Lab(equipment_dict)
-    gui_equipment_dict = {'Lab': lab,
-                         'spec': spec, 
-                         'cam': cam, 
-                         'CWL': CWL, 
-                         'trandor': trandor}    
-    
-    File = datafile.current()
-    gui = GuiGenerator(gui_equipment_dict,
-                       dock_settings_path = r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5\config.npy',
-                       scripts_path= r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5')
-                                
-    gui.show()
-        
+    PC = PowerControl(FW, wutter, lutter, pometer)
+    PC.show_gui(blocking = False)
         
     

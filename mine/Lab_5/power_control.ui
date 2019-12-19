@@ -171,7 +171,7 @@
     <string>min-max angle/voltage</string>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="textBrowser">
+  <widget class="QTextBrowser" name="laser_textBrowser">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -192,7 +192,7 @@
   <zorder>pushButton_set_param</zorder>
   <zorder>doubleSpinBox_min_param</zorder>
   <zorder>doubleSpinBox_max_param</zorder>
-  <zorder>textBrowser</zorder>
+  <zorder>laser_textBrowser</zorder>
  </widget>
  <resources/>
  <connections/>
