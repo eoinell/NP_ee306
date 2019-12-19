@@ -120,12 +120,12 @@ class PowerControl(Instrument):
         
         for counter, point in enumerate(self.points):          
             self.param = point
-            time.sleep(1)
+            time.sleep(0.01)
             powers = np.append(powers,self.pometer.power)
             update_progress(counter)
         group = self.create_data_group('Power_Calibration{}_%d'.format(self.laser), attrs = attrs)
         group.create_dataset('powers',data=powers)
-        if self.measured_power == False:
+        if self.measured_power is None:
             group.create_dataset('real_powers',data=powers, attrs = attrs)
         else:
             group.create_dataset('real_powers',data=( powers*self.measured_power/max(powers)), attrs = attrs)
@@ -137,18 +137,15 @@ class PowerControl(Instrument):
         if laser is None:
            laser = self.laser 
         search_in = self.get_root_data_folder()
-        print search_in
-        for name in search_in.keys():
-            print name
-            print name.startswith('Power_Calibration')
-            print name.split('_')[-1] 
-            print laser[1:]
         try: 
             self.power_calibration = max([(int(name.split('_')[-1]), group)\
-            for name, group in search_in.values() \
-            if name.startswith('Power_Calibration') and\
-            name.split('_')[-1] !=  laser[1:]])[-1]
-        except: ValueError, 'Power Calibration not found'
+            for name, group in search_in.items() \
+            if name.startswith('Power_Calibration') and (name.split('_')[-2] == laser[1:])])[1]
+            self.update_config('real_powers'+self.laser, self.power_calibration['real_powers'])
+        except ValueError:
+            print 'No calibration in current file, using inaccurate configuration'
+            self.power_calibration = {'_'.join(n.split('_')[:-1]) : f for n,f in self.config_file.items() if n.endswith(self.laser)}
+
     def Power(self, power):
         if self.laser == '_785':
             self.rotate_to(self.Power_to_Angle(power))
