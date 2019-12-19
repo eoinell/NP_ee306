@@ -167,6 +167,7 @@ class Lab(Instrument):
             
             self.aligner = SpectrometerAligner(self.spec, self.CWL.stage)
             self.init_aligner = True
+    
     def _initiate_pc(self):
         if self.init_aligner is True:                 
             print 'power controller already initialised'
@@ -174,9 +175,6 @@ class Lab(Instrument):
             if self.laser == '_785': controller = self.FW
             if self.laser == '_633': controller = self.AOM
             self.pc = PowerControl(controller, self.wutter, self.lutter, self.pometer)
-            
-    
-    
     
     def Power_Series(self,
                      tick_this_box = False,
