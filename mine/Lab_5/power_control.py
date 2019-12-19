@@ -33,7 +33,7 @@ class PowerControl(Instrument):
     '''
     meta-instrument for all the equipment in Lab 5. Works analogously to CWL in many respects. 
     '''
-    def __init__(self, power_controller, white_light_shutter, laser_shutter, parent = None):       
+    def __init__(self, power_controller, white_light_shutter, laser_shutter, power_meter):       
         self.pc = power_controller        
         if isinstance(self.pc, 'AOM'):
             self.laser = '_633'
@@ -41,15 +41,14 @@ class PowerControl(Instrument):
             self._785 = False
             self.min_param = 0
             self.max_param = 1
-            self.points = np.linspace(0,1,num = 50, endpoint = True) 
         elif isinstance(self.pc, 'Filter_Wheel'):
             self.laser = '_785'
             self._633 = False
             self._785 = True
             self.min_param = 260
             self.max_param = 500                  
-            self.points = np.logspace(0,np.log10(self.maxangle-self.minangle),50)+self.minangle
-        self.mid_param = (self.max_param - self.min_param)/2
+            
+        
         self.go_to(self.mid_param)
         
         self.maxpower = None 
@@ -62,45 +61,22 @@ class PowerControl(Instrument):
         self.wutter.open_shutter()  
         super(PowerControl, self).__init__(self)
         self._initiate_pc()
+        self.pometer = power_meter
   
     def _initiate_pc(self):
         if self._633:            
             self.pc.Switch_Mode()
-            self.pc.Power(0.95)
-        if self._785:
-            self.go_to
-    
+        self.param = self.mid_param
+   
     def _set_to_midpoint(self):
-        if self.laser == '_785':
-            self.rotate_to(self.midangle)
-        if self.laser == '_633':
-            self.AOM.Power(self.midvolt)
+        self.param = self.mid_param
     def _set_to_maxpoint(self):
-        if self.laser == '_785':
-            self.rotate_to(self.minangle)
-        if self.laser == '_633':
-            self.AOM.Power(self.maxvolt)
-    def _initiate_pometer(self, instrument):
-        if self.init_pometer is True:
-            print 'Power meter already initialised'
-        else:            
-            self.pometer = instrument
+       self.param = self.max_param
+    def _initiate_pometer(self):
+        if isinstance(self.pometer, 'Thorlabs_powermeter'):      
             self.pometer.system.beeper.immediate()
             if self._785: self.pometer.sense.correction.wavelength = 785   
             if self._633: self.pometer.sense.correction.wavelength = 633              
-            self.init_pometer = True
-    def read_pometer(self):
-        Output=[]
-        Fail=0
-        while len(Output)<20:
-            try:
-                Output.append(self.pometer.read)
-                Fail=0
-            except:
-                Fail+=1
-            if Fail==10:
-                raise Exception('Restart power meter')
-        return np.median(Output)*1000 # mW
     
     @property
     def param(self):
@@ -116,7 +92,19 @@ class PowerControl(Instrument):
             self.param = value
         if self._633:
             self.pc.Power(value) 
-    
+    @property
+    def mid_param(self):
+        return (self.max_param - self.min_param)/2
+    @property
+    def max_param(self):
+        return (self.max_param - self.min_param)/2
+    @property
+    def points(self):
+        if self._785:        
+            return np.logspace(0,np.log10(self.maxangle-self.minangle),50)+self.minangle
+        if self._633:
+            return np.linspace(0,1,num = 50, endpoint = True) 
+            
     def Calibrate_Power(self, update_progress=lambda p:p):# Power in mW, measured at maxpoint in FW
         #if you don't want to use a seperate power meter, set Measured_Power = False
         attrs = {}       
@@ -133,68 +121,44 @@ class PowerControl(Instrument):
         
         self.wutter.close_shutter()    
         self.lutter.open_shutter() 
-        if self.laser == '_785':
-            for counter, angle in enumerate(self.anglez):          
-                self.rotate_to(angle)
-                time.sleep(1)
-                powers = np.append(powers,self.read_pometer())
-                update_progress(counter)
-            group = self.create_data_group('Power_Calibration_785_%d', attrs = attrs)
-        if self.laser == '_633':
-            for counter, voltage in enumerate(self.voltagez):
-                self.AOM.Power(voltage)                
-                time.sleep(0.1)
-                powers = np.append(powers,self.read_pometer())
-                update_progress(counter)
-            group = self.create_data_group('Power_Calibration_633_%d', attrs = attrs)
+        
+        for counter, point in enumerate(self.points):          
+            self.param = point
+            time.sleep(1)
+            powers = np.append(powers,self.pometer.power)
+            update_progress(counter)
+        group = self.create_data_group('Power_Calibration{}_%d'.format(self.laser), attrs = attrs)
         group.create_dataset('powers',data=powers)
         if self.measured_power == False:
             group.create_dataset('real_powers',data=powers, attrs = attrs)
         else:
-    
             group.create_dataset('real_powers',data=( powers*self.measured_power/max(powers)), attrs = attrs)
         self.lutter.close_shutter()
         self._set_to_midpoint()
         self.wutter.open_shutter()
         self.update_power_calibration()    
-    def update_power_calibration(self):
-        search_in = self.get_root_data_folder()        
-        power_group = []        
-        if self.laser == '_633':        
-            try:
-                for key in search_in.keys():
-                    if key[0:21] == 'Power_Calibration_633':       
-                        n = 0                
-                        while n<50: 
-                            n-=1
-                                                    
-                            if key[n] == '_':
-                                break                   
-    
-                        power_group.append(int(key[n+1:]))
-                self.power_calibration = search_in['Power_Calibration_633_'+str(max(power_group))]
-            except:
-                print 'Power calibration not found'
-        if self.laser == '_785':
-            try:
-                for key in search_in.keys():
-                    if key[0:21] == 'Power_Calibration_785':       
-                        n = 0                
-                        while n<50: 
-                            n-=1
-                                                    
-                            if key[n] == '_':
-                                break                   
-    
-                        power_group.append(int(key[n+1:]))
-                self.power_calibration = search_in['Power_Calibration_785_'+str(max(power_group))]
-            except:
-                print 'Power calibration not found'
+    def update_power_calibration(self, laser = None):
+        if laser is None:
+           laser = self.laser 
+        search_in = self.get_root_data_folder()
+        self.power_calibration = max([(int(name.split('_')[-1]), group)\
+        for name, group in search_in.keys() \
+        if name.startswith('Power_Calibration') and\
+        name.split('_')[-1] !=  laser[1:]])[-1]
     def Power(self, power):
         if self.laser == '_785':
             self.rotate_to(self.Power_to_Angle(power))
         if self.laser == '_633':
             self.AOM.Power(self.Power_to_Voltage(power))
+    @property
+    def power(self):
+        return self.pometer.power
+    @power.setter
+    def power(self, value):
+        if self._633:
+            self.param = self.Power_to_Voltage(value)
+        if self._785:
+            self.param = self.Power_to_Angle(value)
     def Power_to_Angle(self, power):
         angles = self.power_calibration.attrs['Angles']    
         real_powers = np.array(self.power_calibration['real_powers'])
@@ -250,57 +214,14 @@ class PowerControl_UI(QtWidgets.QWidget,UiTools):
             self.doubleSpinBox_max_param.value = self.Lab.maxvolt
             
         self.pushButton_set_param.clicked.connect(self.set_param)
-        self.pushButton_lutter.clicked.connect(self.Lab.lutter.toggle)
-        self.pushButton_wutter.clicked.connect(self.Lab.wutter.toggle)
-        self.lineEdit_Power_Series_Name.textChanged.connect(self.update_power_series_name)
         self.doubleSpinBox_measured_power.valueChanged.connect(self.update_measured_power)        
-        self.pushButton_particletrack.clicked.connect(self.Lab._launch_particle_track)
-    def update_power_series_name(self):
-        self.power_series_name = self.lineEdit_Power_Series_Name.text() 
-    def _select_laser_633(self):
-        if self.checkBox_633.isChecked() == True:        
-            self.checkBox_785.setChecked(False)
-            self.Lab.laser = '_633' 
-            self.Lab.pometer.sense.correction.wavelength = 633
-            self.anglez = np.linspace(self.minangle , self.maxangle, num = 50, endpoint = True)
-        else:
-            self.checkBox_785.setChecked(True)
-            self.Lab.laser = '_785'
-            self.Lab.pometer.sense.correction.wavelength = 785
-            self.Lab.anglez = np.logspace(0,np.log10(self.maxangle - self.minangle),50)+self.minangle
-    def _select_laser_785(self):
-        if self.checkBox_785.isChecked() == True:       
-            self.checkBox_633.setChecked(False)
-            self.Lab.laser = '_785' 
-            self.Lab.pometer.sense.correction.wavelength = 785
-            self.Lab.anglez = np.logspace(0,np.log10(self.Lab.maxangle - self.Lab.minangle),50)+self.Lab.minangle
-        else:
-            self.checkBox_633.setChecked(True)
-            self.Lab.laser = '_633'
-            self.Lab.pometer.sense.correction.wavelength = 633
-            self.Lab.anglez = np.linspace(self.Lab.minangle , self.Lab.maxangle, num = 50, endpoint = True)    
-    def update_exposure(self):
-        self.Lab.trandor_exposure = self.doubleSpinBox_exposure.value()
-        self.Lab.trandor.Exposure = self.Lab.trandor_exposure        
-    def set_trandor_centre_wl(self):
-        self.Lab.trandor.Set_Center_Wavelength(self.doubleSpinBox_trandor_centre_wl.value())
-    
-    def set_slit(self):
-        self.Lab.trandor.triax.Slit(self.doubleSpinBox_slit.value())
-    def update_steps(self):
-        self.Lab.steps = self.spinBox_steps.value()
-    def update_nkin(self):
-        self.Lab.max_nkin = self.spinBox_max_nkin.value()
-    def update_ramp(self):
-        self.Lab.ramp = self.checkBox_ramp.isChecked()
-    def update_measured_power(self):
-        self.Lab.measured_power = self.doubleSpinBox_measured_power.value()
+     
+
     def update_min_max_params(self):
-        if self.Lab.laser == '_785':
-            self.Lab.minangle = self.doubleSpinBox_min_param.value()
-            self.Lab.maxangle = self.doubleSpinBox_max_param.value()
-            self.Lab.anglez = np.logspace(0,np.log10(self.Lab.maxangle-self.Lab.minangle),50)+self.Lab.minangle
-            self.Lab.midangle = (self.Lab.maxangle - self.Lab.minangle)/2
+        self.Lab.power_control.min_param = self.doubleSpinBox_min_param.value()
+        self.Lab.power_control.max_param = self.doubleSpinBox_max_param.value()
+        
+        
         if self.laser == '_633':
             self.Lab.minvolt = self.doubleSpinBox_min_param.value()
             self.Lab.maxvolt = self.doubleSpinBox_max_param.value() 

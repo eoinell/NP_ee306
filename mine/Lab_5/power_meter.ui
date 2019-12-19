@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>221</width>
-    <height>61</height>
+    <width>238</width>
+    <height>50</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,13 +18,19 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>195</width>
+     <width>221</width>
      <height>31</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QLCDNumber" name="power_lcdNumber">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="font">
        <font>
         <kerning>false</kerning>
@@ -35,6 +41,9 @@
       </property>
       <property name="frameShadow">
        <enum>QFrame::Plain</enum>
+      </property>
+      <property name="numDigits">
+       <number>8</number>
       </property>
       <property name="segmentStyle">
        <enum>QLCDNumber::Flat</enum>

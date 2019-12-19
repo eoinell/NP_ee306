@@ -518,7 +518,7 @@ if __name__ == '__main__':
     from nplab.instrument.stage.prior import ProScan
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
     from nplab import datafile
-    from ThorlabsPM100.ThorlabsPM100 import ThorlabsPM100
+    from nplab.instrument.electronics.ThorlabPM100_powermeter import ThorPM100
     import Rotation_Stage as RS
     import AOM
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
@@ -533,14 +533,14 @@ if __name__ == '__main__':
     lutter = ThorLabsSC10('COM30')
     FW= RS.Filter_Wheel() 
     lutter.set_mode(1)
-    aom = AOM.AOM()
-    aom.Switch_Mode()
-    aom.Power(0.95)
-    inst = rm.open_resource('USB0::0x1313::0x807B::17121118::INSTR',timeout=1)
-    pometer = ThorlabsPM100(inst=inst)
+#    aom = AOM.AOM()
+#    aom.Switch_Mode()
+#    aom.Power(0.95)
+    
+    pometer = ThorPM100(address = 'USB0::0x1313::0x807B::17121118::INSTR')
     wutter = Uniblitz("COM8")
     cam = LumeneraCamera(1)
-    
+    pometer.show_gui()
     stage = ProScan("COM32",hardware_version=2)
     CWL = CameraWithLocation(cam, stage)
     
