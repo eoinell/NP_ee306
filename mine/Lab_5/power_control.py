@@ -146,11 +146,6 @@ class PowerControl(Instrument):
             print 'No calibration in current file, using inaccurate configuration'
             self.power_calibration = {'_'.join(n.split('_')[:-1]) : f for n,f in self.config_file.items() if n.endswith(self.laser)}
 
-    def Power(self, power):
-        if self.laser == '_785':
-            self.rotate_to(self.Power_to_Angle(power))
-        if self.laser == '_633':
-            self.AOM.Power(self.Power_to_Voltage(power))
     @property
     def power(self):
         return self.pometer.power
