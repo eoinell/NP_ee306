@@ -319,7 +319,7 @@ if __name__ == '__main__':
     from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
     from nplab.instrument.stage.prior import ProScan
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
-    from nplab.instrument.electronics.ThorlabPM100_powermeter import ThorPM100
+    from mine.Lab_5.thorlabs_pm1000 import Thorlabs_powermeter
     from AOM import AOM as Aom
     from Rotation_Stage import Filter_Wheel
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     lutter.set_mode(1)
     FW= Filter_Wheel() 
     aom = Aom()
-    pometer = ThorPM100(address = 'USB0::0x1313::0x807B::17121118::INSTR')
+    pometer = Thorlabs_powermeter(address = 'USB0::0x1313::0x807B::17121118::INSTR')
     wutter = Uniblitz("COM8")
     PC_785 = PowerControl(FW, wutter, lutter, pometer)
 #    PC_633 = PowerControl(aom, wutter, lutter, pometer)
