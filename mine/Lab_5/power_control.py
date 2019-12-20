@@ -5,7 +5,7 @@ Created on Thu Aug 01 16:38:56 2019
 @author: ee306
 """
 import sys
-
+import os
 import numpy as np
 from scipy import interpolate 
 import time
@@ -16,6 +16,9 @@ from nplab.ui.ui_tools import UiTools
 from scipy.interpolate import UnivariateSpline
 from nplab.experiment.gui import run_function_modally
 from nplab.instrument import Instrument
+from AOM import AOM as Aom
+from Rotation_Stage import Filter_Wheel
+
  
 def laser_merit(im):
     merit = 1
@@ -35,19 +38,19 @@ class PowerControl(Instrument):
     '''
     def __init__(self, power_controller, white_light_shutter, laser_shutter, power_meter):       
         self.pc = power_controller        
-        if isinstance(self.pc, AOM.AOM):
+        if isinstance(self.pc, Aom):
             self.laser = '_633'
             self._633 = True
             self._785 = False
             self.min_param = 0
             self.max_param = 1
-        elif isinstance(self.pc, RS.Filter_Wheel):
+        elif isinstance(self.pc, Filter_Wheel):
             self.laser = '_785'
             self._633 = False
             self._785 = True
             self.min_param = 260
             self.max_param = 500                  
-            
+        else: raise ValueError, 'power_controller must be AOM or Filter Wheel'
         self.param = self.mid_param
         self.maxpower = None 
         self.minpower = None
@@ -143,8 +146,12 @@ class PowerControl(Instrument):
             if name.startswith('Power_Calibration') and (name.split('_')[-2] == laser[1:])])[1]
             self.update_config('real_powers'+self.laser, self.power_calibration['real_powers'])
         except ValueError:
-            print 'No calibration in current file, using inaccurate configuration'
-            self.power_calibration = {'_'.join(n.split('_')[:-1]) : f for n,f in self.config_file.items() if n.endswith(self.laser)}
+            
+            if len(self.config_file)>1:            
+                self.power_calibration = {'_'.join(n.split('_')[:-1]) : f for n,f in self.config_file.items() if n.endswith(self.laser)}
+                print 'No power calibration in current file, using inaccurate configuration'
+            else:
+                print('No power calibration found')
 
     @property
     def power(self):
@@ -205,12 +212,9 @@ class PowerControl_UI(QtWidgets.QWidget,UiTools):
         self.pushButton_set_param.clicked.connect(self.set_param)
         self.doubleSpinBox_measured_power.valueChanged.connect(self.update_measured_power)        
      
-
     def update_min_max_params(self):
         self.PC.min_param = self.doubleSpinBox_min_param.value()
         self.PC.max_param = self.doubleSpinBox_max_param.value()
-        
-        
         if self.PC.laser == '_633' and self.PC.max_param>1:
             print 'voltages over 1 not allowed!'
             self.PC.maxvolt = 1
@@ -220,19 +224,15 @@ class PowerControl_UI(QtWidgets.QWidget,UiTools):
         if self.PC._633 and self.param.value()>1:       
             self.PC.param = 1
         else:
-            self.PC.param = self.param.value()
+            self.PC.param = self.doubleSpinBox_set_input_param.value()
    
     def Calibrate_Power_gui(self):
         run_function_modally(self.PC.Calibrate_Power, progress_maximum = len(self.PC.points))
     
-
-
 if __name__ == '__main__': 
-    import os
+
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
     from mine.Lab_5.thorlabs_pm1000 import Thorlabs_powermeter
-    from Rotation_Stage import Filter_Wheel
-    import AOM
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
 
     os.chdir(r'C:\Users\00\Documents\ee306')    
@@ -240,12 +240,13 @@ if __name__ == '__main__':
     lutter = ThorLabsSC10('COM30')
     FW = Filter_Wheel() 
     lutter.set_mode(1)
-    aom = AOM.AOM()
+    aom = Aom()
     aom.Switch_Mode()
     aom.Power(0.95)
     pometer = Thorlabs_powermeter()
     wutter = Uniblitz("COM8")
     PC = PowerControl(FW, wutter, lutter, pometer)
     PC.show_gui(blocking = False)
+    pometer.show_gui(blocking = False)
         
     
