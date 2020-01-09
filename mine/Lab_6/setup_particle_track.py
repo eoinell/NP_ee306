@@ -2,7 +2,7 @@
 """
 Created on Thu Aug 01 16:38:56 2019
 
-@author: Hera
+@author: ee306
 """
 import numpy as np
 import time
@@ -36,8 +36,7 @@ class PT_lab(Lab):
         self.wutter.open_shutter()        
         self.lutter.close_shutter()
         return to_save 
-
-        
+     
 if __name__ == '__main__':
     import os
     from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
@@ -88,7 +87,8 @@ if __name__ == '__main__':
                           'Camera' : cam,
                           'CWL' : CWL,
                           'shamrock' : shamdor.shamrock,
-                          'andor' : shamdor}
+                          'andor' : shamdor,
+                          'power_wheel' : filter_wheel}
     
     gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
                        scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 

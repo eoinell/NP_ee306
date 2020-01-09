@@ -2,13 +2,13 @@
 """
 Created on Thu Aug 01 16:38:56 2019
 
-@author: Hera
+@author: ee306
 """
 from __future__ import print_function
 import sys
 import numpy as np
 import time
-from qtpy import QtWidgets, uic
+from nplab.utils.gui import QtWidgets, uic
 from nplab.utils.gui_generator import GuiGenerator
 from nplab.ui.ui_tools import UiTools
 from nplab.experiment.gui import run_function_modally
