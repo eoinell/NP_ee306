@@ -66,7 +66,9 @@ class Lab(Instrument):
         self._initiate_CWL(ed['CWL'])
         self._initiate_wutter(ed['wutter'])
         self._initiate_trandor(ed['trandor'])
-        self._initiate_pc(ed['pc'])
+        self._initiate_pc(ed['pc_633'])
+        self.init_pc = False 
+        self._initiate_pc(ed['pc_785'])
         self._initiate_aligner()
     def _initiate_spectrometer(self, instrument):
         if self.init_spec is True:        
@@ -308,7 +310,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def update_loop_down(self):
         self.Lab.loow_down = self.checkBox_loop_down.isChecked()
     def Power_Series_gui(self):
-        run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.ramp == True else self.Lab.steps*2)
+        run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.loop_down == True else self.Lab.steps*2)
 
 
 if __name__ == '__main__': 
@@ -337,7 +339,7 @@ if __name__ == '__main__':
     pometer = Thorlabs_powermeter(address = 'USB0::0x1313::0x807B::17121118::INSTR')
     wutter = Uniblitz("COM8")
     PC_785 = PowerControl(FW, wutter, lutter, pometer)
-#    PC_633 = PowerControl(aom, wutter, lutter, pometer)
+    PC_633 = PowerControl(aom, wutter, lutter, pometer)
     cam = LumeneraCamera(1)
     stage = ProScan("COM32",hardware_version=2)
     CWL = CameraWithLocation(cam, stage)
@@ -352,16 +354,19 @@ if __name__ == '__main__':
                     'cam' : cam,
                     'CWL' : CWL,
                     'trandor' : trandor,
-                    'pc' : PC_785}
+                    'pc_785' : PC_785,
+                    'pc_633' : PC_633}
     lab = Lab(equipment_dict)
   #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    
     gui_equipment_dict = {'Lab': lab,
                          'spec': spec, 
                          'cam': cam, 
                          'CWL': CWL, 
                          'andor': trandor,
                          'triax': trandor.triax,
-                         'power_control' : PC_785,
+                         'power_control_785' : PC_785,
+                         'power_control_633' : PC_633,
                          'power_meter' : pometer,
                          'lutter' : lutter,
                          'wutter' : wutter}
