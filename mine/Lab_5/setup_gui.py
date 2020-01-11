@@ -151,7 +151,21 @@ class Lab(Instrument):
         else:
             self.pc = instrument
             self.init_pc = True
-    
+    def fancy_capture(self):
+        '''
+        Takes a spectrum on the shamdor, but turns off the white light and turns on the laser first, 
+        then restores the instrument to its initial state
+        '''
+        wutter_open = self.wutter.is_open()
+        lutter_closed = self.lutter.is_closed()
+        
+        if wutter_open: self.wutter.close_shutter()
+        if lutter_closed: self.lutter.toggle() # toggle is more efficient than open/close
+#        time.sleep(0.1)
+        self.trandor.get_qt_ui().Capture()
+        
+        if wutter_open: self.wutter.open_shutter()
+        if lutter_closed: self.lutter.toggle()
     def Power_Series(self,
                      tick_this_box = False,
                      focus_with_laser = True,
@@ -265,6 +279,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.checkBox_633.stateChanged.connect(self._select_laser_633)
         self.checkBox_785.stateChanged.connect(self._select_laser_785)
         self.checkBox_785.setChecked(True)                   
+        self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
         self.spinBox_steps.valueChanged.connect(self.update_steps)
         self.spinBox_max_nkin.valueChanged.connect(self.update_nkin)
         self.spinBox_max_nkin.setValue(self.Lab.max_nkin)
