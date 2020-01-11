@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>251</width>
-    <height>171</height>
+    <width>345</width>
+    <height>207</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -195,6 +195,22 @@
     <string>Fancy Capture</string>
    </property>
   </widget>
+  <widget class="QCheckBox" name="use_shifts_checkBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>170</y>
+     <width>91</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>x-axis = shifts</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
   <zorder>label_6</zorder>
   <zorder>pushButton_Power_Series</zorder>
   <zorder>lineEdit_Power_Series_Name</zorder>
@@ -209,6 +225,7 @@
   <zorder>doubleSpinBox_minpower</zorder>
   <zorder>doubleSpinBox_maxpower</zorder>
   <zorder>fancy_capture_pushButton</zorder>
+  <zorder>use_shifts_checkBox</zorder>
  </widget>
  <resources/>
  <connections/>
