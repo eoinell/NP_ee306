@@ -228,9 +228,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         if self._633_radioButton.isChecked():     
             self.Lab.laser  = '_633'
         if self._785_radioButton.isChecked(): 
-            self.Lab.laser = '_785'
-        
-        
+            self.Lab.laser = '_785'   
     def modal_example_gui(self):
         '''
         running a function modally produces a progress bar, and takes care of threading stuff for you to keep the GUI responsive
@@ -278,7 +276,8 @@ if __name__ == '__main__':
                           'Camera' : cam,
                           'CWL' : CWL,
                           'shamrock' : shamdor.shamrock,
-                          'andor' : shamdor}
+                          'andor' : shamdor,
+                          'filter wheel' :  filter_wheel}
     
     gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
                        scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
