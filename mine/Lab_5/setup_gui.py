@@ -284,6 +284,9 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.checkBox_633.stateChanged.connect(self._select_laser_633)
         self.checkBox_785.stateChanged.connect(self._select_laser_785)
         self.checkBox_785.setChecked(True)
+        self.group_name_lineEdit.textChanged.connect(self.update_group_name)
+        self.create_group_pushButton.clicked.connect(self.create_data_group_gui)
+        self.use_created_group_checkBox.stateChanged.connect(self.update_use_current_group)
         self.use_shifts_checkBox.stateChanged.connect (self.update_use_shifts)                  
         self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
         self.spinBox_steps.valueChanged.connect(self.update_steps)
@@ -308,7 +311,22 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
             self.Lab.laser = '_785' 
         else:
             self.checkBox_633.setChecked(True)
-
+    def update_group_name(self):
+        self.group_name = self.group_name_lineEdit.text() 
+    def create_data_group_gui(self):
+        init_use_cur = datafile._use_current_group
+        datafile._use_current_group = False
+        self.gui_current_group = self.Lab.create_data_group(self.group_name)
+        if self.use_created_group_checkBox.checkState(): 
+            datafile._current_group = self.gui_current_group
+        if init_use_cur: datafile._use_current_group = True
+    def update_use_current_group(self):
+        if self.use_created_group_checkBox.checkState():
+            datafile._use_current_group = True
+            try:datafile._current_group = self.gui_current_group
+            except: print('No created group (yet)!')
+        else:
+            datafile._use_current_group = False 
     def update_use_shifts(self):
         self.Lab.trandor.use_shifts = self.use_shifts_checkBox.checkState()    
     def update_steps(self):
