@@ -36,7 +36,3 @@ if __name__ == '__main__':
     pm = Thorlabs_powermeter()
     pm.show_gui(blocking = False)
     
-    
-    
-        
-    

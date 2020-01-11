@@ -7,7 +7,6 @@ Created on Thu Aug 01 16:38:56 2019
 import sys
 
 import numpy as np
-from scipy import interpolate 
 import time
 from qtpy import QtWidgets, uic
 import matplotlib.pyplot as plt
@@ -16,7 +15,9 @@ from nplab.ui.ui_tools import UiTools
 from scipy.interpolate import UnivariateSpline
 from nplab.experiment.gui import run_function_modally
 from nplab.instrument import Instrument
+from nplab import datafile
 from mine.Lab_5.power_control import PowerControl
+
  
 def laser_merit(im):
     merit = 1
@@ -29,15 +30,14 @@ def laser_merit(im):
     try: merit = 1/(max(roots)-min(roots))
     except: merit = 0
     return merit
+    
 class Lab(Instrument):
     '''
     meta-instrument for all the equipment in Lab 5. Works analogously to CWL in many respects. 
     '''
     def __init__(self, equipment_dict, parent = None):       
         self.laser = '_785' 
-        self.initiate_all(equipment_dict)
-        self.anglez = np.logspace(0,np.log10(self.maxangle-self.minangle),50)+self.minangle
-        
+        self.initiate_all(equipment_dict)        
         self.power_series_name = 'particle_%d'
         self.loop_down = False
         self.steps = 5
@@ -51,27 +51,25 @@ class Lab(Instrument):
     def initiate_all(self, ed):
         self.init_spec = False
         self.init_lutter = False
-        self.init_FW = False
         self.init_pometer = False
         self.init_cam = False
         self.init_CWL = False
         self.init_wutter = False
         self.init_trandor = False
         self.init_aligner = False                
-        self.init_AOM = False
-        self.init_pc = Flase               
+        self.init_pc = False               
+        
         self._initiate_spectrometer(ed['spec'])
         self._initiate_lutter(ed['lutter'])
-        self._initiate_FW(ed['FW'])
         self._initiate_pometer(ed['pometer'])
         self._initiate_cam(ed['cam'])        
         self._initiate_CWL(ed['CWL'])
         self._initiate_wutter(ed['wutter'])
         self._initiate_trandor(ed['trandor'])
+        self._initiate_pc(ed['pc_633'])
+        self.init_pc = False 
+        self._initiate_pc(ed['pc_785'])
         self._initiate_aligner()
-        self._initiate_AOM(ed['AOM'])
-        self._initiate_pc()
-
     def _initiate_spectrometer(self, instrument):
         if self.init_spec is True:        
             print 'Spectrometer already initialised'
@@ -85,31 +83,9 @@ class Lab(Instrument):
             self.lutter = instrument
             self.lutter.set_mode(1)
             self.init_lutter = True        
-    def _initiate_FW(self, instrument):
-        if self.init_FW is True:            
-            print 'Filter Wheel already initialised'
-        else:            
-            self.FW = instrument   
-            self.init_FW = True
-    def _initiate_AOM(self, instrument):
-        if self.init_AOM == True:
-            print 'AOM already initialised'
-        else:
-            self.AOM = instrument
-            self.AOM.Switch_Mode()
-            self.AOM.Power(0.95)
-    def _set_to_midpoint(self):
-        if self.laser == '_785':
-            self.rotate_to(self.midangle)
-        if self.laser == '_633':
-            self.AOM.Power(self.midvolt)
-    def _set_to_maxpoint(self):
-        if self.laser == '_785':
-            self.rotate_to(self.minangle)
-        if self.laser == '_633':
-            self.AOM.Power(self.maxvolt)
+
     def _initiate_pometer(self, instrument):
-        if self.init_pometer is True:
+        if self.init_pometer:
             print 'Power meter already initialised'
         else:            
             self.pometer = instrument
@@ -118,7 +94,7 @@ class Lab(Instrument):
             if self.laser == '_633': self.pometer.sense.correction.wavelength = 633              
             self.init_pometer = True
     def _initiate_cam(self, instrument):
-        if self.init_cam is True:
+        if self.init_cam:
             print 'Camera already initalised'
         else:
             self.cam = instrument
@@ -126,14 +102,15 @@ class Lab(Instrument):
             self.cam.gain = 20.
             self.init_cam = True
     def _initiate_CWL(self, instrument):
-        if self.init_CWL is True:
+        if self.init_CWL:
             print 'Camera with location already initialised'
-        else:
+        else:            
             self.CWL = instrument
-            self.CWL.load_calibration()
+#            try: self.CWL.load_calibration()
+#            except: print('stage xy calibration not found')
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
-        if self.init_wutter is True :           
+        if self.init_wutter:           
             print 'White light shutter already initialised'
         else:            
             self.wutter = instrument
@@ -141,7 +118,7 @@ class Lab(Instrument):
             self.wutter.open_shutter()
             self.init_wutter = True
     def _initiate_trandor(self, instrument):
-        if self.init_trandor is True:
+        if self.init_trandor:
             print 'Triax and Andor already initialised'
         else:            
             self.trandor = instrument
@@ -161,21 +138,34 @@ class Lab(Instrument):
             self.trandor.SetParameter('NKin', 1)
             self.init_trandor = True
     def _initiate_aligner(self):
-        if self.init_aligner is True:                 
+        if self.init_aligner:                 
             print 'Spectrometer aligner already initialised'
         else:
             
             self.aligner = SpectrometerAligner(self.spec, self.CWL.stage)
             self.init_aligner = True
     
-    def _initiate_pc(self):
-        if self.init_aligner is True:                 
+    def _initiate_pc(self, instrument):
+        if self.init_pc is True:                 
             print 'power controller already initialised'
         else:
-            if self.laser == '_785': controller = self.FW
-            if self.laser == '_633': controller = self.AOM
-            self.pc = PowerControl(controller, self.wutter, self.lutter, self.pometer)
-    
+            self.pc = instrument
+            self.init_pc = True
+    def fancy_capture(self):
+        '''
+        Takes a spectrum on the shamdor, but turns off the white light and turns on the laser first, 
+        then restores the instrument to its initial state
+        '''
+        wutter_open = self.wutter.is_open()
+        lutter_closed = self.lutter.is_closed()
+        
+        if wutter_open: self.wutter.close_shutter()
+        if lutter_closed: self.lutter.toggle() # toggle is more efficient than open/close
+#        time.sleep(0.1)
+        self.trandor.get_qt_ui().Capture()
+        
+        if wutter_open: self.wutter.open_shutter()
+        if lutter_closed: self.lutter.toggle()
     def Power_Series(self,
                      tick_this_box = False,
                      focus_with_laser = True,
@@ -289,14 +279,13 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.checkBox_633.stateChanged.connect(self._select_laser_633)
         self.checkBox_785.stateChanged.connect(self._select_laser_785)
         self.checkBox_785.setChecked(True)                   
+        self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
         self.spinBox_steps.valueChanged.connect(self.update_steps)
         self.spinBox_max_nkin.valueChanged.connect(self.update_nkin)
         self.spinBox_max_nkin.setValue(self.Lab.max_nkin)
-        self.checkBox_ramp.stateChanged.connect(self.update_ramp)
+        self.checkBox_loop_down.stateChanged.connect(self.update_loop_down)
         self.pushButton_Power_Series.clicked.connect(self.Power_Series_gui)
-    
-        self.lineEdit_Power_Series_Name.textChanged.connect(self.update_power_series_name)
-        self.doubleSpinBox_measured_power.valueChanged.connect(self.update_measured_power)        
+        self.lineEdit_Power_Series_Name.textChanged.connect(self.update_power_series_name)        
         self.pushButton_particletrack.clicked.connect(self.Lab._launch_particle_track)
     def update_power_series_name(self):
         self.power_series_name = self.lineEdit_Power_Series_Name.text() 
@@ -334,9 +323,9 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def update_nkin(self):
         self.Lab.max_nkin = self.spinBox_max_nkin.value()
     def update_loop_down(self):
-        self.Lab.loow_down = self.checkBox_ramp.isChecked()
+        self.Lab.loow_down = self.checkBox_loop_down.isChecked()
     def Power_Series_gui(self):
-        run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.ramp == True else self.Lab.steps*2)
+        run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.loop_down == True else self.Lab.steps*2)
 
 
 if __name__ == '__main__': 
@@ -347,31 +336,30 @@ if __name__ == '__main__':
     from nplab.instrument.spectrometer.spectrometer_aligner import SpectrometerAligner
     from nplab.instrument.stage.prior import ProScan
     from nplab.instrument.shutter.BX51_uniblitz import Uniblitz
-    from nplab.instrument.electronics.ThorlabPM100_powermeter import ThorPM100
+    from mine.Lab_5.thorlabs_pm1000 import Thorlabs_powermeter
+    from AOM import AOM as Aom
     from Rotation_Stage import Filter_Wheel
-    import AOM
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.spectrometer.Triax.Trandor_Lab5 import Trandor
     from particle_tracking_app.particle_tracking_wizard import TrackingWizard
 
-    os.chdir(r'C:\Users\00\Documents\ee306')    
-    app = QtWidgets.QApplication(sys.argv)    
-    
+    os.chdir(r'C:\Users\00\Documents\ee306')
+    app = QtWidgets.QApplication(sys.argv)       
+    #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-    
     spec = OceanOpticsSpectrometer(0) 
-    
     lutter = ThorLabsSC10('COM30')
     lutter.set_mode(1)
     FW= Filter_Wheel() 
-    aom = AOM.AOM()
-    pometer = ThorPM100(address = 'USB0::0x1313::0x807B::17121118::INSTR')
+    aom = Aom()
+    pometer = Thorlabs_powermeter(address = 'USB0::0x1313::0x807B::17121118::INSTR')
     wutter = Uniblitz("COM8")
-    
+    PC_785 = PowerControl(FW, wutter, lutter, pometer)
+    PC_633 = PowerControl(aom, wutter, lutter, pometer)
     cam = LumeneraCamera(1)
     stage = ProScan("COM32",hardware_version=2)
     CWL = CameraWithLocation(cam, stage)
-    
     trandor=Trandor()
-    
+    #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     equipment_dict = {'spec' : spec,
                     'lutter' : lutter,
                     'FW' : FW,
@@ -380,23 +368,27 @@ if __name__ == '__main__':
                     'wutter' : wutter,
                     'cam' : cam,
                     'CWL' : CWL,
-                    'trandor' : trandor}
+                    'trandor' : trandor,
+                    'pc_785' : PC_785,
+                    'pc_633' : PC_633}
     lab = Lab(equipment_dict)
+  #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    
     gui_equipment_dict = {'Lab': lab,
                          'spec': spec, 
                          'cam': cam, 
                          'CWL': CWL, 
                          'andor': trandor,
                          'triax': trandor.triax,
-                         'power_control' : lab.pc,
+                         'power_control_785' : PC_785,
+                         'power_control_633' : PC_633,
                          'power_meter' : pometer,
                          'lutter' : lutter,
                          'wutter' : wutter}
     gui = GuiGenerator(gui_equipment_dict,
                        dock_settings_path = r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5\config.npy',
-                       scripts_path= r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5')
-                                
+                       scripts_path= r'C:\Users\00\Documents\GitHub\NP_ee306\mine\Lab_5')                           
     gui.show()
-        
+    #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-     
         
     
