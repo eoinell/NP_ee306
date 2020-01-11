@@ -36,14 +36,11 @@ class Lab(Instrument):
     meta-instrument for all the equipment in Lab 5. Works analogously to CWL in many respects. 
     '''
     def __init__(self, equipment_dict, parent = None):       
-        self.laser = '_785' 
         self.initiate_all(equipment_dict)        
         self.power_series_name = 'particle_%d'
         self.loop_down = False
         self.steps = 5
         self.max_nkin = 10        
-        
-        self.pc.update_power_calibration()
         self.lutter.close_shutter()
         self.wutter.open_shutter()  
         Instrument.__init__(self)
@@ -66,9 +63,9 @@ class Lab(Instrument):
         self._initiate_CWL(ed['CWL'])
         self._initiate_wutter(ed['wutter'])
         self._initiate_trandor(ed['trandor'])
-        self._initiate_pc(ed['pc_633'])
+        self._initiate_pc(ed['pc_633'], label = 'pc_633')
         self.init_pc = False 
-        self._initiate_pc(ed['pc_785'])
+        self._initiate_pc(ed['pc_785'], label = 'pc_785')
         self._initiate_aligner()
     def _initiate_spectrometer(self, instrument):
         if self.init_spec is True:        
@@ -89,9 +86,7 @@ class Lab(Instrument):
             print 'Power meter already initialised'
         else:            
             self.pometer = instrument
-            self.pometer.system.beeper.immediate()
-            if self.laser == '_785': self.pometer.sense.correction.wavelength = 785   
-            if self.laser == '_633': self.pometer.sense.correction.wavelength = 633              
+            self.pometer.system.beeper.immediate()             
             self.init_pometer = True
     def _initiate_cam(self, instrument):
         if self.init_cam:
@@ -106,8 +101,8 @@ class Lab(Instrument):
             print 'Camera with location already initialised'
         else:            
             self.CWL = instrument
-#            try: self.CWL.load_calibration()
-#            except: print('stage xy calibration not found')
+            try: self.CWL.load_calibration()
+            except: print('stage xy calibration not found')
             self.init_CWL = True
     def _initiate_wutter(self, instrument):    
         if self.init_wutter:           
@@ -145,11 +140,11 @@ class Lab(Instrument):
             self.aligner = SpectrometerAligner(self.spec, self.CWL.stage)
             self.init_aligner = True
     
-    def _initiate_pc(self, instrument):
+    def _initiate_pc(self, instrument, label = 'pc'):
         if self.init_pc is True:                 
             print 'power controller already initialised'
         else:
-            self.pc = instrument
+            exec('self.' +label+' = instrument')
             self.init_pc = True
     def fancy_capture(self):
         '''
@@ -166,6 +161,16 @@ class Lab(Instrument):
         
         if wutter_open: self.wutter.open_shutter()
         if lutter_closed: self.lutter.toggle()
+    @property
+    def laser(self):
+        return '_633' if self.get_qt_ui().checkBox_633.isChecked() else '_785'
+    @laser.setter
+    def laser(self, _wl):
+        self.trandor.laser = _wl
+        self.pometer.sense.correction.wavelength = int(_wl[1:])
+        self.pc = eval('self.pc'+ _wl)
+        self._785 = (_wl == '_785')
+        self._633 = (_wl == '_633')
     def Power_Series(self,
                      tick_this_box = False,
                      focus_with_laser = True,
@@ -278,7 +283,8 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
     def SetupSignals(self):
         self.checkBox_633.stateChanged.connect(self._select_laser_633)
         self.checkBox_785.stateChanged.connect(self._select_laser_785)
-        self.checkBox_785.setChecked(True)                   
+        self.checkBox_785.setChecked(True)
+        self.use_shifts_checkBox.stateChanged.connect (self.update_use_shifts)                  
         self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
         self.spinBox_steps.valueChanged.connect(self.update_steps)
         self.spinBox_max_nkin.valueChanged.connect(self.update_nkin)
@@ -293,31 +299,18 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         if self.checkBox_633.isChecked() == True:        
             self.checkBox_785.setChecked(False)
             self.Lab.laser = '_633' 
-            self.Lab.pometer.sense.correction.wavelength = 633
-            self.Lab.pc.laser = self.Lab.laser
         else:
             self.checkBox_785.setChecked(True)
-            self.Lab.laser = '_785'
-            self.Lab.pometer.sense.correction.wavelength = 785
-            self.Lab.pc.laser = self.Lab.laser
             
     def _select_laser_785(self):
         if self.checkBox_785.isChecked() == True:       
             self.checkBox_633.setChecked(False)
             self.Lab.laser = '_785' 
-            self.Lab.pometer.sense.correction.wavelength = 785
-            self.Lab.pc.laser = self.Lab.laser
         else:
             self.checkBox_633.setChecked(True)
-            self.Lab.laser = '_633'
-            self.Lab.pometer.sense.correction.wavelength = 633
-            self.Lab.pc.laser = self.Lab.laser
-        
-    def set_trandor_centre_wl(self):
-        self.Lab.trandor.Set_Center_Wavelength(self.doubleSpinBox_trandor_centre_wl.value())
-    def set_slit(self):
-        self.Lab.trandor.triax.Slit(self.doubleSpinBox_slit.value())
-    
+
+    def update_use_shifts(self):
+        self.Lab.trandor.use_shifts = self.use_shifts_checkBox.checkState()    
     def update_steps(self):
         self.Lab.steps = self.spinBox_steps.value()
     def update_nkin(self):
@@ -326,7 +319,6 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.Lab.loow_down = self.checkBox_loop_down.isChecked()
     def Power_Series_gui(self):
         run_function_modally(self.Lab.Power_Series,  progress_maximum = self.Lab.steps if self.Lab.loop_down == True else self.Lab.steps*2)
-
 
 if __name__ == '__main__': 
     import os
@@ -360,7 +352,8 @@ if __name__ == '__main__':
     CWL = CameraWithLocation(cam, stage)
     trandor=Trandor()
     #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
-    equipment_dict = {'spec' : spec,
+    equipment_dict = {
+                    'spec' : spec,
                     'lutter' : lutter,
                     'FW' : FW,
                     'AOM' : aom,
