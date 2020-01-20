@@ -4,7 +4,6 @@ Created on Thu Aug 01 16:38:56 2019
 
 @author: Hera
 """
-import numpy as np
 import time
 from nplab.utils.gui_generator import GuiGenerator
 from nplab import datafile
@@ -36,8 +35,7 @@ class PT_lab(Lab):
         self.wutter.open_shutter()        
         self.lutter.close_shutter()
         return to_save 
-
-        
+       
 if __name__ == '__main__':
     import os
     from nplab.instrument.spectrometer.seabreeze import OceanOpticsSpectrometer
@@ -51,13 +49,13 @@ if __name__ == '__main__':
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.stage.Thorlabs_FW212C import FW212C   
 
-    os.chdir(r'C:\Users\np-albali\Documents')       
+    os.chdir(r'C:\Users\hera\Documents')       
     spec = OceanOpticsSpectrometer(0) 
     lutter = ThorLabsSC10('COM1')
     lutter.set_mode(1)
-    wutter = Uniblitz("COM7")
+    wutter = Uniblitz("COM10")
     cam = LumeneraCamera(1)
-    stage = ProScan("COM9")
+    stage = ProScan("COM4")
     CWL = CameraWithLocation(cam, stage)
     shamdor = Shamdor(Andor)
     filter_wheel = FW212C()
@@ -90,8 +88,8 @@ if __name__ == '__main__':
                           'shamrock' : shamdor.shamrock,
                           'andor' : shamdor}
     
-    gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
-                       scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
+    gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\hera\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
+                       scripts_path = r'C:\Users\hera\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
     gui.show()
     
     #=================================================#
