@@ -119,7 +119,7 @@ class Lab(Instrument):
             self.shamdor.cooler = True
             self.shamdor.Exposure= 1
 
-            self.shamdor.ReadMode=3
+            self.shamdor.ReadMode = 3
             self.shamdor.SingleTrack = (100, 30)
             self.shamdor.AcquisitionMode = 3
    
@@ -137,14 +137,13 @@ class Lab(Instrument):
         else:            
             self.power_wheel = instrument
             self.power_wheel.setPosition(1)
-            
-    def get_laser(self):
-        return self.laser
-    
-    def set_laser(self, Laser):
+    @property        
+    def laser(self):
+        return self._laser
+    @laser.setter
+    def laser(self, Laser):
+        self._laser = Laser
         self.shamdor.laser = Laser
-        
-    laser = property(get_laser, set_laser)
     
     
     def fancy_capture(self):
@@ -187,7 +186,7 @@ class Lab(Instrument):
 class Lab_gui(QtWidgets.QWidget,UiTools):
     def __init__(self, lab):
         super(Lab_gui, self).__init__()
-        uic.loadUi(r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\setup_gui.ui', self)
+        uic.loadUi(r'C:\Users\hera\Documents\GitHub\NP_ee306\mine\Lab_6\setup_gui.ui', self)
         self.Lab = lab
         self.group_name = 'particle_%d' 
         self.gui_current_group = None
@@ -228,9 +227,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         if self._633_radioButton.isChecked():     
             self.Lab.laser  = '_633'
         if self._785_radioButton.isChecked(): 
-            self.Lab.laser = '_785'
-        
-        
+            self.Lab.laser = '_785'   
     def modal_example_gui(self):
         '''
         running a function modally produces a progress bar, and takes care of threading stuff for you to keep the GUI responsive
@@ -250,13 +247,13 @@ if __name__ == '__main__':
     from nplab.instrument.shutter.thorlabs_sc10 import ThorLabsSC10
     from nplab.instrument.stage.Thorlabs_FW212C import FW212C   
 
-    os.chdir(r'C:\Users\np-albali\Documents')       
+    os.chdir(r'C:\Users\hera\Documents')       
     spec = OceanOpticsSpectrometer(0) 
     lutter = ThorLabsSC10('COM1')
     lutter.set_mode(1)
-    wutter = Uniblitz("COM7")
+    wutter = Uniblitz("COM10")
     cam = LumeneraCamera(1)
-    stage = ProScan("COM9")
+    stage = ProScan("COM4")
     CWL = CameraWithLocation(cam, stage)
     shamdor = Shamdor(use_shifts = False)
     filter_wheel = FW212C()
@@ -278,10 +275,12 @@ if __name__ == '__main__':
                           'Camera' : cam,
                           'CWL' : CWL,
                           'shamrock' : shamdor.shamrock,
-                          'andor' : shamdor}
+                          'andor' : shamdor,
+                          'filter wheel' :  filter_wheel}
     
-    gui = GuiGenerator(gui_equipment_dict, dock_settings_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
-                       scripts_path = r'C:\Users\np-albali\Documents\GitHub\NP_ee306\mine\Lab_6')                                                 
+    gui = GuiGenerator(gui_equipment_dict, 
+                      dock_settings_path = r'C:\Users\hera\Documents\GitHub\NP_ee306\mine\Lab_6\config.npy',
+                      scripts_path = r'C:\Users\hera\Documents\GitHub\NP_ee306\mine\Lab_6')                                                   
     gui.show()
         
         
