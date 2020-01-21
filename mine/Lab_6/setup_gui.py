@@ -192,8 +192,7 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.gui_current_group = None
         self.SetupSignals()
     def SetupSignals(self): 
-        self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)
-        self.set_power_pushButton.clicked.connect(self.set_power_gui)        
+        self.fancy_capture_pushButton.clicked.connect(self.Lab.fancy_capture)        
         self.group_name_lineEdit.textChanged.connect(self.update_group_name)
         self.create_group_pushButton.clicked.connect(self.create_data_group_gui)
         self.use_created_group_checkBox.stateChanged.connect(self.update_use_current_group)
@@ -203,8 +202,6 @@ class Lab_gui(QtWidgets.QWidget,UiTools):
         self.use_shifts_checkBox.stateChanged.connect(self.update_use_shifts)
         self._633_radioButton.clicked.connect(self.update_laser_gui)
         self._785_radioButton.clicked.connect(self.update_laser_gui)
-    def set_power_gui(self):
-        self.Lab.power_wheel.setPosition(self.power_wheel_spinBox.value())
     def update_group_name(self):
         self.group_name = self.group_name_lineEdit.text() 
     def create_data_group_gui(self):
