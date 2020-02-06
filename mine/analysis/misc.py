@@ -76,8 +76,7 @@ def truncate(counts, wavelengths, lower_cutoff, upper_cutoff, return_indices_onl
         if wl>=lower_cutoff:
             
             l = index
-            break
-        
+            break    
     u = False
     for index, wl in enumerate(wavelengths[l:]):
         if wl>= upper_cutoff:
