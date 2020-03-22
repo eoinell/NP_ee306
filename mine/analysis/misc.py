@@ -23,11 +23,7 @@ from lmfit import Minimizer
 from nplab.analysis.background_removal import Adaptive_Polynomial as AP
 from nplab.analysis.SERS_Fitting import Auto_Fit_Raman as AFR
 import matplotlib.pyplot as plt
-from nplab.analysis import smoothing as sm
-
-
-
-
+# from nplab.analysis import smoothing as sm
 
 def findH5File(rootDir, mostRecent = True, nameFormat = 'date'):
     '''
