@@ -28,7 +28,7 @@ class GraphWidget(pg.PlotWidget):
         self.title(title)
     @property
     def x(self):
-        return np.linspace(*self.xlim)
+        return np.linspace(*self.xlim, num=100)
     
     @property
     def y(self):
@@ -106,20 +106,23 @@ class Parameter(QtWidgets.QWidget):
         return float(self) + np.array(other)
     def __sub__(self, other):
         return float(self) - np.array(other)
-    def __mul__(self,other):
+    def __mul__(self, other):
         return float(self)*np.array(other)
     def __truediv__(self,other):
         return float(self)/np.array(other)
     def __pow__(self, other):
         return float(self)**np.array(other)
+    
     def __radd__(self,other):
         return self.__add__(other)
     def __rsub__(self,other):
         return self.__sub__(other)
     def __rmul__(self,other):
         return self.__mul__(other)
-    def __rtruediv(self,other):
-        return self.__truediv(other)
+    def __rtruediv__(self,other):
+        return self.__truediv__(other)
+    def __rpow__(self, other):
+        return self.__pow__(other)
        
 class ParameterWidget(QtGui.QGroupBox):
     '''
@@ -159,6 +162,7 @@ class LivePlotWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.widget)
         self.parameter_widget.param_changed.connect(self.update_graphs)
         self.update_graphs()
+    
     def update_graphs(self):
         self.graphing_group.update_graphs()        
     
@@ -170,18 +174,26 @@ if __name__ == '__main__':
     #Initialize all parameters
     A = Parameter('A', 5, Min=0, Max=10)
     B =  Parameter('B', 2)
-    parameter_widget = ParameterWidget([A,B])
+    C = Parameter('C',11)
+    D = Parameter('D',7)
+    parameter_widget = ParameterWidget([A,B,C,D])
     #define the equations for each plot
     def equation1(x):
-        return A*x + B
+        return A*x**3 + B*x**2 + C*x +D
     def equation2(x):
-        return A*x**2 - B
+        return (A*x**3 - B*x**2 - C*x)/D
+    def eq3(x):
+        return A**np.sin(C*x)/D*x
+    def eq4(x):
+        return (np.sin(A*x)/B*x) +D
     
-    graph1 = GraphWidget(equation1)
-    graph2 = GraphWidget(equation2)
-    graphs = GraphGroup([graph1,graph2])
+    graph1 = GraphWidget(equation1, title='1st')
+    graph2 = GraphWidget(equation2, title='2nd')
+    g3 = GraphWidget(eq3, title='etc,')
+    g4 = GraphWidget(eq4, title='etc.')
+    graphs = GraphGroup([graph1,graph2, g3, g4])
 
     live_plot_window = LivePlotWindow(graphs, parameter_widget)
-    live_plot_window.show()   
+    live_plot_window.show() 
    
 
