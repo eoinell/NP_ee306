@@ -20,12 +20,19 @@ class GraphWidget(pg.PlotWidget):
     make use of xlabel and ylabel methods!
         
     '''
-    def __init__(self, equation, xlim=(-10,10), ylim=(0,100), title='graph'):
+    def __init__(self, equation,
+                 xlim=(-10,10),
+                 ylim=(0,100),
+                 title='graph',
+                 xlabel = 'X axis',
+                 ylabel = 'Y axis'):
         super().__init__(title=title)
         self.equation = equation
         self.xlim = xlim
         self.ylim = ylim
         self.title(title)
+        self.xlabel(xlabel)
+        self.ylabel(ylabel)
     @property
     def x(self):
         return np.linspace(*self.xlim, num=100)
@@ -40,7 +47,6 @@ class GraphWidget(pg.PlotWidget):
     
     def xlabel(self, label):
         self.setLabel('bottom', label)
-    
     def ylabel(self, label):
         self.setLabel('left', label)
     def title(self, title):
