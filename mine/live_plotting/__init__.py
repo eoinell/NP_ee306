@@ -20,14 +20,14 @@ class GraphWidget(pg.PlotWidget):
     make use of xlabel and ylabel methods!
         
     '''
-    def __init__(self, equation,
+    def __init__(self, equation, #TODO: implement multiple equations for 1 plot.
                  xlim=(-10,10),
                  ylim=(0,100),
                  title='graph',
                  xlabel = 'X axis',
                  ylabel = 'Y axis'):
         super().__init__(title=title)
-        self.equation = equation
+        self.equation = equation# if type(equation) is list:
         self.xlim = xlim
         self.ylim = ylim
         self.title(title)
@@ -178,10 +178,10 @@ class LivePlotWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     #Initialize all parameters
-    A = Parameter('A', 5, Min=0, Max=10)
-    B =  Parameter('B', 2)
-    C = Parameter('C',11)
-    D = Parameter('D',7)
+    A = Parameter('A', 15, Min=0, Max=10)
+    B =  Parameter('B', 6)
+    C = Parameter('C',15)
+    D = Parameter('D',6)
     parameter_widget = ParameterWidget([A,B,C,D])
     #define the equations for each plot
     def equation1(x):
