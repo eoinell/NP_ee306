@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
+__author__ = 'Eoin Elliott'
 """
-Plotting qn modes.
+A utility for adding any number of graphs,
+plotting any number of equations each, and varying
+any number of parameters in these equations through
+a gui.
 """
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtGui, QtWidgets, QtCore
+from qtpy import QtGui, QtWidgets, QtCore
 
 class GraphWidget(pg.PlotWidget):
     '''
@@ -123,20 +127,21 @@ class Parameter(QtWidgets.QWidget, FloatMathMixin):
         
     '''
     
-    param_changed = QtCore.pyqtSignal(int)
-    def __init__(self, name, Default=1,Min=0,Max=100):
+    param_changed = QtCore.Signal(int)
+    def __init__(self, name, Default=1,Min=0,Max=100,units=None):
         super().__init__()
         self.name = name
+        self.units = f' ({units})' if units is not None else ''
         self.setLayout(QtWidgets.QFormLayout())
-        self.layout().addWidget(QtGui.QLabel(self.name))
+        self.layout().addWidget(QtGui.QLabel(self.name+self.units))
         self.box = QtGui.QDoubleSpinBox()
         self.layout().addWidget(self.box)
         self.box.setValue(Default)
         self.box.valueChanged.connect(self.param_changed.emit)
     def __repr__(self):
-        return self.box.value()
+        return str(self.box.value())
     def __str__(self):
-        return f'Parameter {self.name}: {self.box.value()}'
+        return f'Parameter {self.name}: {self.box.value()} {self.units}'
     def __int__(self):
         return int(self.box.value())
     def __float__(self):
@@ -148,7 +153,7 @@ class ParameterWidget(QtGui.QGroupBox):
     feed me parameters and i'll add spinBoxes for them, and 
     emit a signal when they're changed to update the graphs. 
     '''
-    param_changed = QtCore.pyqtSignal(int)
+    param_changed = QtCore.Signal(int)
     def __init__(self, parameters):
         super().__init__('Parameter controls')
         self.parameters = parameters
@@ -193,7 +198,7 @@ class LivePlotWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     #Initialize all parameters
-    A = Parameter('A', 15, Min=0, Max=10)
+    A = Parameter('A', 15, Min=0, Max=10, units= 'm')
     B =  Parameter('B', 6)
     C = Parameter('C',15)
     D = Parameter('D',6)
@@ -209,8 +214,8 @@ if __name__ == '__main__':
         return (np.sin(A*x)/B*x) +D
     
     graph1 = GraphWidget(equation1, equation2, title='1st')
-    graph2 = GraphWidget(equation2, title='2nd')
-    g3 = GraphWidget(eq3, title='etc,')
+    graph2 = GraphWidget(equation2, xlim=(-5,5), title='2nd')
+    g3 = GraphWidget(eq3, title='etc,', xlabel = ':)')
     g4 = GraphWidget(eq4, title='etc.')
     graphs = GraphGroup([graph1,graph2, g3, g4])
 
