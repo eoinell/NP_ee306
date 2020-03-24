@@ -176,7 +176,8 @@ class LivePlotWindow(QtWidgets.QMainWindow):
         self.graphing_group = graphing_group
         self.parameter_widget = parameter_widget
         self.setWindowTitle('Quasi-Normal Modes')
-        self.setWindowIcon(QtGui.QIcon('bessel.png'))
+        # self.setWindowIcon(QtGui.QIcon('bessel.png'))
+        self.setWindowIcon(QtGui.QIcon('maxwell.png'))
         self.widget = QtGui.QWidget()
         self.widget.setLayout(layout)
         self.setCentralWidget(self.widget)
