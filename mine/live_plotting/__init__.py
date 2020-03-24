@@ -20,31 +20,39 @@ class GraphWidget(pg.PlotWidget):
     make use of xlabel and ylabel methods!
         
     '''
-    def __init__(self, equation, #TODO: implement multiple equations for 1 plot.
+    def __init__(self, *args, #TODO: implement multiple equations for 1 plot.
                  xlim=(-10,10),
                  ylim=(0,100),
                  title='graph',
                  xlabel = 'X axis',
                  ylabel = 'Y axis'):
         super().__init__(title=title)
-        self.equation = equation# if type(equation) is list:
+        self.equations = args
         self.xlim = xlim
         self.ylim = ylim
         self.title(title)
         self.xlabel(xlabel)
         self.ylabel(ylabel)
+        self.hasLegend=False
+        self.addLegend()
     @property
     def x(self):
         return np.linspace(*self.xlim, num=100)
     
     @property
-    def y(self):
-        return self.equation(self.x)
+    def ys(self):
+        return [equation(self.x) for equation in self.equations]
         
     def update(self):
-        self.clear()
-        self.plot(self.x, self.y)
-    
+        def name(eq): # takes the name of the function the first time,
+        #and returns none after to stop the legend from exploding
+            if self.hasLegend: return None
+            return str(eq).split(' ')[1]
+            
+        self.clearPlots() 
+        for i,(y,eq) in enumerate(zip(self.ys, self.equations)): 
+            self.plot(self.x, y, pen=(i,len(self.ys)),name=name(eq))
+
     def xlabel(self, label):
         self.setLabel('bottom', label)
     def ylabel(self, label):
@@ -53,7 +61,7 @@ class GraphWidget(pg.PlotWidget):
         self._title = title
         self.setTitle(title)
     def export(self):
-        print('x,y:',self.x, self.y, sep='\n')
+        print('x, y(s):',self.x, self.ys, sep='\n')
 
 
 class GraphGroup(QtGui.QGroupBox):
@@ -70,12 +78,38 @@ class GraphGroup(QtGui.QGroupBox):
     def update_graphs(self):
         for g in self.graphs:
             g.update()
+            g.hasLegend = True
     def export(self):
         for g in self.graphs:
             print(g._title)
             g.export()
             
-class Parameter(QtWidgets.QWidget):
+            
+class FloatMathMixin():
+    
+    def __add__(self, other):
+        return float(self) + np.array(other)
+    def __sub__(self, other):
+        return float(self) - np.array(other)
+    def __mul__(self, other):
+        return float(self)*np.array(other)
+    def __truediv__(self,other):
+        return float(self)/np.array(other)
+    def __pow__(self, other):
+        return float(self)**np.array(other)
+    
+    def __radd__(self,other):
+        return self.__add__(other)
+    def __rsub__(self,other):
+        return self.__sub__(other)
+    def __rmul__(self,other):
+        return self.__mul__(other)
+    def __rtruediv__(self,other):
+        return self.__truediv__(other)
+    def __rpow__(self, other):
+        return self.__pow__(other)
+                
+class Parameter(QtWidgets.QWidget, FloatMathMixin):
     '''
     Representation of a parameter to be varied in an equation.
     Takes its value from the Gui.
@@ -99,7 +133,6 @@ class Parameter(QtWidgets.QWidget):
         self.layout().addWidget(self.box)
         self.box.setValue(Default)
         self.box.valueChanged.connect(self.param_changed.emit)
-    
     def __repr__(self):
         return self.box.value()
     def __str__(self):
@@ -108,27 +141,7 @@ class Parameter(QtWidgets.QWidget):
         return int(self.box.value())
     def __float__(self):
         return float(self.box.value())
-    def __add__(self, other):
-        return float(self) + np.array(other)
-    def __sub__(self, other):
-        return float(self) - np.array(other)
-    def __mul__(self, other):
-        return float(self)*np.array(other)
-    def __truediv__(self,other):
-        return float(self)/np.array(other)
-    def __pow__(self, other):
-        return float(self)**np.array(other)
     
-    def __radd__(self,other):
-        return self.__add__(other)
-    def __rsub__(self,other):
-        return self.__sub__(other)
-    def __rmul__(self,other):
-        return self.__mul__(other)
-    def __rtruediv__(self,other):
-        return self.__truediv__(other)
-    def __rpow__(self, other):
-        return self.__pow__(other)
        
 class ParameterWidget(QtGui.QGroupBox):
     '''
@@ -193,7 +206,7 @@ if __name__ == '__main__':
     def eq4(x):
         return (np.sin(A*x)/B*x) +D
     
-    graph1 = GraphWidget(equation1, title='1st')
+    graph1 = GraphWidget(equation1, equation2, title='1st')
     graph2 = GraphWidget(equation2, title='2nd')
     g3 = GraphWidget(eq3, title='etc,')
     g4 = GraphWidget(eq4, title='etc.')
