@@ -20,7 +20,7 @@ class GraphWidget(pg.PlotWidget):
     make use of xlabel and ylabel methods!
         
     '''
-    def __init__(self, *args, #TODO: implement multiple equations for 1 plot.
+    def __init__(self, *args, 
                  xlim=(-10,10),
                  ylim=(0,100),
                  title='graph',
@@ -81,7 +81,7 @@ class GraphGroup(QtGui.QGroupBox):
             g.hasLegend = True
     def export(self):
         for g in self.graphs:
-            print(g._title)
+            print('Graph: ', g._title)
             g.export()
             
             
@@ -159,6 +159,7 @@ class ParameterWidget(QtGui.QGroupBox):
     def export(self):
         for p in self.parameters:
             print(p)
+            
 class LivePlotWindow(QtWidgets.QMainWindow):
     '''Puts the graphing and parameter widgets together'''
     def __init__(self, graphing_group, parameter_widget):  
@@ -198,9 +199,9 @@ if __name__ == '__main__':
     parameter_widget = ParameterWidget([A,B,C,D])
     #define the equations for each plot
     def equation1(x):
-        return A*x**3 + B*x**2 + C*x +D
+        return A*x**2 + B*x**2 - C*x + D
     def equation2(x):
-        return (A*x**3 - B*x**2 - C*x)/D
+        return A*x**3 - (B/C)*x**2 + D
     def eq3(x):
         return A**np.sin(C*x)/D*x
     def eq4(x):
